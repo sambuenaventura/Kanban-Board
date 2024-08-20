@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.completed {
+    text-decoration: line-through;
+}
+
+.strikethrough {
+    text-decoration: line-through;
+    color: gray; /* Optional: change text color to gray for a faded look */
+}
+
+.flex-1.bg-gray-100.rounded-lg.overflow-hidden {
+    min-height: 200px; /* Ensures columns have a minimum height */
+    transition: background-color 0.3s ease;
+}
+
+.flex-1.bg-gray-100.rounded-lg.overflow-hidden.drag-over {
+    background-color: #e2e8f0; /* Light blue background when dragging over */
+}
+
+.kanban-column.p-4 li {
+    transition: transform 0.1s ease;
+}
+
+.kanban-column.p-4 li:hover {
+    cursor: grab;
+}
+
+.kanban-column.p-4 li:active {
+    cursor: grabbing;
+}
+
+.kanban-column.p-4 li.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    right: 0;
+    margin-top: 0.5rem; /* Adjust as needed */
+    width: 12rem; /* Adjust width as needed */
+    background-color: white;
+    border: 1px solid #ccc; /* Light gray border */
+    border-radius: 0.25rem; /* Rounded corners */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Light shadow */
+    z-index: 10; /* Ensure it appears above other elements */
+}
+
+.dropdown-menu ul {
+    list-style: none; /* Remove default list style */
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown-menu li {
+    padding: 0.5rem 1rem; /* Spacing inside the list item */
+    cursor: pointer; /* Pointer cursor on hover */
+}
+
+.dropdown-menu li:hover {
+    background-color: #f0f0f0; /* Light gray background on hover */
+}
+@media (max-width: 640px) {
+    .kanban-column {
+        min-height: 300px; /* Ensure columns have a minimum height on mobile */
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1279px) {
+    .kanban-column {
+        min-height: 400px; /* Adjust minimum height for medium screens */
+    }
+}
+
+@media (min-width: 1280px) {
+    .kanban-column {
+        min-height: 500px; /* Adjust minimum height for larger screens */
+    }
+}
+
+/* Smooth transition for layout changes */
+.kanban-column,
+.kanban-column > div {
+    transition: all 0.3s ease-in-out;
+}
+
+.text-task_name {
+    font-size: 0.875rem;
+    margin-right: 0.875rem;
+}
+
+.text-task_tag {
+    font-size: 0.675rem;
+    padding-top: 0.175rem;
+    padding-bottom: 0.175rem;
+}
+
+/* Custom CSS for date and select placeholders */
+.placeholder-date-gray-300::placeholder {
+    color: #d1d5db; /* gray-300 */
+}
+.placeholder-select-gray-300::placeholder {
+    color: #d1d5db; /* gray-300 */
+}
+
+/* Reset color on focus */
+input[type="date"]:focus,
+select:focus {
+    color: #000; /* black */
+}
+
+/* Change text color when input is not empty */
+input[type="date"]:not(:placeholder-shown),
+select:not(:placeholder-shown) {
+    color: #000; /* black */
+}
+.modal-content img {
+    max-width: 90vw; /* Limit the image width to 90% of the viewport width */
+    max-height: 90vh; /* Limit the image height to 90% of the viewport height */
+    object-fit: contain; /* Maintain aspect ratio and ensure the entire image fits within the container */
+}
+.modal-content {
+    position: relative; /* Ensure the close button is positioned relative to the modal */
+    overflow: hidden; /* Prevent overflow from large images */
+}
+/* In your CSS file or <style> section */
+.no-scroll {
+    overflow: hidden;
+}
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-indent: 1px;
+    text-overflow: "";
+}
