@@ -24,9 +24,9 @@ class TaskController extends Controller
 
 
         // Retrieve tasks in different statuses
-        $toDoTasks = $this->getToDoTasks($tasks);
-        $inProgressTasks = $this->getInProgressTasks($tasks);
-        $doneTasks = $this->getDoneTasks($tasks);
+        $toDoTasks = Task::getTaskByProgress($tasks, 'to_do');
+        $inProgressTasks =  Task::getTaskByProgress($tasks, 'in_progress');
+        $doneTasks =  Task::getTaskByProgress($tasks, 'done');
     
         // Count tasks in each status
         $countToDo = $this->countToDo($tasks);
@@ -53,39 +53,6 @@ class TaskController extends Controller
     }
     
     
-    
-    
-    private function getToDoTasks($tasks)
-    {
-        return $tasks->where('progress', 'to_do')->groupBy(function($task) {
-            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
-        })->sortKeys();
-    }
-
-    private function getInProgressTasks($tasks)
-    {
-        return $tasks->where('progress', 'in_progress')->groupBy(function($task) {
-            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
-        })->sortKeys();
-    }
-
-    private function getDoneTasks($tasks)
-    {
-        return $tasks->where('progress', 'done')->groupBy(function($task) {
-            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
-        })->sortKeys();
-    }
-    
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
     /**
      * Store a newly created resource in storage.
      */

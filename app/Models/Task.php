@@ -35,6 +35,15 @@ class Task extends Model implements HasMedia
         return $query;
     }
 
+    public static function getTaskByProgress($tasks, $progress)
+    {
+        return $tasks->where('progress', $progress)->groupBy(function($task) {
+            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
+        })->sortKeys();
+    }
+
+
+
 
 
 }
