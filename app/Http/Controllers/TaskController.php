@@ -12,10 +12,9 @@ class TaskController extends Controller
 {
 
 
-
     public function index(Request $request, $tags = null)
     {
-        $tasks = $this->getUserTasks();
+        $tasks = Task::getUserTasks();
     
         // Filter tasks by tags if any are selected
         $tasks = $this->filterTasksByTags($tasks, $tags);
@@ -60,12 +59,6 @@ class TaskController extends Controller
     }
     
     
-    private function getUserTasks()
-    {
-        return Task::where('user_id', auth()->id())
-            ->latest()
-            ->paginate();
-    }
     
     private function getToDoTasks($tasks)
     {

@@ -15,6 +15,11 @@ class Task extends Model implements HasMedia
     protected $fillable = ['user_id', 'name', 'description', 'due', 'priority', 'progress', 'tag'];
 
 
+    public static function getUserTasks() 
+    {
+        return self::where('user_id', auth()->id())
+        ->latest()
+        ->paginate();
+    }
 
-    
 }
