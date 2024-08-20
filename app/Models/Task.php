@@ -14,14 +14,18 @@ class Task extends Model implements HasMedia
 
     protected $fillable = ['user_id', 'name', 'description', 'due', 'priority', 'progress', 'tag'];
 
+    public function scopeForUser($query)
+    {
+        return $query->where('user_id', auth()->id());
+    }
 
     public static function getUserTasks() 
     {
-        return self::where('user_id', auth()->id())
+        return self::forUser()
         ->latest()
         ->paginate();
     }
-
+    
     public function scopeFilterByTags($query, $tags)
     {
         if ($tags) {
@@ -30,4 +34,7 @@ class Task extends Model implements HasMedia
         }
         return $query;
     }
+
+
+
 }

@@ -16,7 +16,11 @@ class TaskController extends Controller
     {
         $tasks = Task::getUserTasks();
     
-        $tasks = Task::filterByTags($tags)->get();
+        $tasks = Task::forUser()->filterByTags($tags)->get();
+        
+        // Filter tasks by tags if any are selected
+        // $tasks = $this->filterTasksByTags($tasks, $tags);
+    
 
 
         // Retrieve tasks in different statuses
