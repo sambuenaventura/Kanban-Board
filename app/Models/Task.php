@@ -22,4 +22,12 @@ class Task extends Model implements HasMedia
         ->paginate();
     }
 
+    public function scopeFilterByTags($query, $tags)
+    {
+        if ($tags) {
+            $selectedTags = explode(',', $tags);
+            $query->whereIn('tag', $selectedTags);
+        }
+        return $query;
+    }
 }

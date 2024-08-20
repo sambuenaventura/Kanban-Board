@@ -16,9 +16,9 @@ class TaskController extends Controller
     {
         $tasks = Task::getUserTasks();
     
-        // Filter tasks by tags if any are selected
-        $tasks = $this->filterTasksByTags($tasks, $tags);
-    
+        $tasks = Task::filterByTags($tags)->get();
+
+
         // Retrieve tasks in different statuses
         $toDoTasks = $this->getToDoTasks($tasks);
         $inProgressTasks = $this->getInProgressTasks($tasks);
@@ -48,15 +48,6 @@ class TaskController extends Controller
         ));
     }
     
-    
-    private function filterTasksByTags($tasks, $tags)
-    {
-        if ($tags) {
-            $selectedTags = explode(',', $tags);
-            $tasks = $tasks->whereIn('tag', $selectedTags);
-        }
-        return $tasks;
-    }
     
     
     
