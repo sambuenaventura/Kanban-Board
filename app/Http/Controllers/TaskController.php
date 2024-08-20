@@ -84,12 +84,15 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
+        $task = Task::forUser()->find($task->id);
+    
+        if (!$task) {
             abort(403);
         }
-
+    
         return view('task.show', ['task' => $task]);
     }
+    
 
     /**
      * Show the form for editing the specified resource.
