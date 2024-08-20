@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTaskRequest;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -56,29 +57,14 @@ class TaskController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string'],
-            'description' => ['nullable', 'string'],
-            'due' => ['required', 'date'],
-            'priority' => ['required', 'string'],
-            'progress' => ['required', 'string'],
-            'tag' => ['required', 'string'],
-        ],
-        [
-            'name.required'=> 'The name is required.',
-            'due.required'=> 'The date is required.',
-            'priority.required'=> 'The priority is required.',
-            'progress.required'=> 'The progress is required.',
-            'tag.required'=> 'A tag is required.'
-        ]);
-    
-        $data['user_id'] = $request->user()->id;
         
-        $task = Task::create($data);
+        $data = $request->validated();
+        $data['user_id'] = $request->user()->id;
     
-        // Corrected return statement
+        Task::create($data);    
+        
         return to_route('tasks.index')->with('success', 'Task created.');
     }
     
