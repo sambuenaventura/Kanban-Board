@@ -111,70 +111,86 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreTaskRequest $request, Task $task)
-    {
-        $task = Task::forUser()->find($task->id);
+    // public function update(StoreTaskRequest $request, Task $task)
+    // {
+    //     $task = Task::forUser()->find($task->id);
     
-        if (!$task) {
-            abort(403);
-        }
-        
-        $data = $request->validated();
-
-        $task->update($data);
-
-        return to_route('tasks.show', $task)->with('success', 'Task updated successfully.');
-    }
-
-    public function updateProgress(Request $request, Task $task) 
-    {
-        if ($task->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        // $originalProgress = $task->progress;
-
-        $data = $request->validate([
-            'progress' => ['required', 'string'],
-        ]);
-
-        $task->update($data);
-
-        // Set the success message based on the original Progress
-        if ($data['progress'] == 'to_do') {
-            $message = 'Task reopened successfully.';
-
-        } elseif ($data['progress'] == 'in_progress') {
-            $message = 'Task started successfully.';
-
-        }
-        else {
-            $message = 'Task completed successfully.';
-        }
-
-
-        return to_route('tasks.show', $task)->with('success', $message);
-    }
-
-    // public function fileUpload(Request $request, Task $task) {
-
-    //     $data = $request->validate([
-    //         'attachment' => ['file'],
-    //     ]);
-        
-    //     if ($request->hasFile('attachment')) {
-    //         $attachment = $request->file('attachment')->store('public');
-    //         $data['attachment'] = $attachment; // Add file path to $data
+    //     if (!$task) {
+    //         abort(403);
     //     }
         
-        
+    //     $data = $request->validated();
 
     //     $task->update($data);
 
-    //     return to_route('tasks.show', $task)->with('success', 'Success');
-
+    //     return to_route('tasks.show', $task)->with('success', 'Task updated successfully.');
     // }
+
+    // public function updateProgress(Request $request, Task $task) 
+    // {
+    //     if ($task->user_id !== auth()->id()) {
+    //         abort(403);
+    //     }
+
+    //     // $originalProgress = $task->progress;
+
+    //     $data = $request->validate([
+    //         'progress' => ['required', 'string'],
+    //     ]);
+
+    //     $task->update($data);
+
+    //     // Set the success message based on the original Progress
+    //     if ($data['progress'] == 'to_do') {
+    //         $message = 'Task reopened successfully.';
+
+    //     } elseif ($data['progress'] == 'in_progress') {
+    //         $message = 'Task started successfully.';
+
+    //     }
+    //     else {
+    //         $message = 'Task completed successfully.';
+    //     }
+
+
+    //     return to_route('tasks.show', $task)->with('success', $message);
+    // }
+
+
+    public function update(StoreTaskRequest $request, Task $task)
+    {
+        // Authorize the user
+        $task = Task::forUser()->findOrFail($task->id);
+        
+        $validatedData = $request->validated();
+
+        // Update the task
+        $task->update($validatedData);
     
+        // Check the source to determine the success message
+        if ($request->input('source') === 'progress' && isset($validatedData['progress']) && $task->wasChanged('progress')) {
+            // Progress-specific messages
+            switch ($validatedData['progress']) {
+                case 'to_do':
+                    $message = 'Task reopened successfully.';
+                    break;
+                case 'in_progress':
+                    $message = 'Task started successfully.';
+                    break;
+                case 'done':
+                    $message = 'Task completed successfully.';
+                    break;
+            }
+        } else {
+            // General success message for the edit page
+            $message = 'Task updated successfully.';
+        }
+    
+        return to_route('tasks.show', $task)->with('success', $message);
+    }
+    
+
+
     public function fileUpload(Request $request, Task $task) {
 
         $data = $request->validate([
