@@ -32,8 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     // Route::patch('/tasks/{task}', [TaskController::class, 'updateProgress'])->name('tasks.updateProgress');
     
-    Route::post('/tasks/{task}/files', [TaskController::class, 'fileUpload'])->name('tasks.fileUpload');
-    Route::delete('/tasks/{task}/file/{attachment}', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
+    Route::post('/tasks/{task}/files', [TaskController::class, 'uploadFile'])->name('tasks.uploadFile');
+    Route::delete('/tasks/{task}/files/{attachment}', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
 
 });
 

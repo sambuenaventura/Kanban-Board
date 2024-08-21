@@ -192,7 +192,7 @@ class TaskController extends Controller
     
 
 
-    public function fileUpload(Request $request, Task $task) {
+    public function uploadFile(Request $request, Task $task) {
 
         $data = $request->validate([
             'attachment' => ['required', 'file'],

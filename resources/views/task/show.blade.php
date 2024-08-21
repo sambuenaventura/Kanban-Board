@@ -113,7 +113,7 @@
                         <!-- Task Actions -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Attachment</h3>
-                            <form action="{{ route('tasks.fileUpload', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
+                            <form action="{{ route('tasks.uploadFile', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
                                 @csrf
                                 @method('POST')
                                 <div class="flex items-center space-x-4">
