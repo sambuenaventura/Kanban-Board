@@ -19,17 +19,18 @@ class StoreTaskRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
-    {
-        return [
-            'name' => ['required', 'string'],
-            'description' => ['nullable', 'string'],
-            'due' => ['required', 'date'],
-            'priority' => ['required', 'string'],
-            'progress' => ['required', 'string'],
-            'tag' => ['required', 'string'],
-        ];
-    }
+public function rules(): array
+{
+    return [
+        'name' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
+        'description' => ['nullable', 'string'],
+        'due' => $this->isMethod('post') ? ['required', 'date'] : ['sometimes', 'date'],
+        'priority' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
+        'progress' => ['required', 'string'], // assuming progress is always required
+        'tag' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
+    ];
+}
+
 
     public function messages(): array
     {
