@@ -15,9 +15,11 @@
                             <h1 class="text-3xl font-bold text-gray-900 mb-2 sm:mb-0">{{ $task->name }}</h1>
                             <div class="flex space-x-2">
                                 <!-- Progress Button -->
-                                <form action="{{ route('tasks.updateProgress', $task) }}" method="POST" class="inline">
+                                <form action="{{ route('tasks.update', $task->id) }}" method="POST">
                                     @csrf
                                     @method('PATCH')
+                                    <input type="hidden" name="source" value="progress">
+
                                     {{-- <input type="hidden" name="progress" value="{{ $task->progress == 'to_do' ? 'in_progress' : ($task->progress == 'in_progress' ? 'done' : 'to_do') }}"> --}}
                                     {{-- <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:border-indigo-700 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition"> --}}
                                     {{-- <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:border-indigo-700 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">

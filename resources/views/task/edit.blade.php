@@ -14,6 +14,7 @@
                     <form action="{{ route('tasks.update', $task) }}" method="POST">
                         @csrf
                         @method('PATCH')
+                        <input type="hidden" name="source" value="edit">
 
                         <div class="grid grid-cols-1 gap-6">
                             <div>
