@@ -25,6 +25,12 @@ class Task extends Model implements HasMedia
         ->latest()
         ->paginate();
     }
+
+    public static function countTaskByStatus($tasks, $progress)
+    {
+        return $tasks->where('progress', $progress)
+        ->count();
+    }
     
     public function scopeFilterByTags($query, $tags)
     {

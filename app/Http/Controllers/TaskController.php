@@ -33,14 +33,14 @@ class TaskController extends Controller
         $doneTasks =  Task::getTaskByProgress($tasks, 'done');
     
         // Count tasks in each status
-        $countToDo = $this->countToDo($tasks);
-        $countInProgress = $this->countInProgress($tasks);
-        $countDone = $this->countDone($tasks);
+        $countToDo =  Task::countTaskByStatus($tasks, 'to_do');
+        $countInProgress =  Task::countTaskByStatus($tasks, 'in_progress');
+        $countDone =  Task::countTaskByStatus($tasks, 'done');
     
         // Get all tags for filtering
         $allTags = $this->getAllTags();
     
-        // Convert tags from the URL into an array
+        // Convert tags from the URL into an array  
         $selectedTags = $tags ? explode(',', $tags) : [];
     
         return view('task.index', compact(
@@ -263,25 +263,6 @@ class TaskController extends Controller
         $task->save();
     
         return response()->json(['message' => 'Task updated successfully', 'task' => $task]);
-    }
-    
-
-    private function countTodo($tasks) 
-    {
-        return $tasks->where('progress', 'to_do')
-        ->count();
-    }
-
-    private function countInProgress($tasks) 
-    {
-        return $tasks->where('progress', 'in_progress')
-        ->count();
-    }
-
-    private function countDone($tasks) 
-    {
-        return $tasks->where('progress', 'done')
-        ->count();
     }
 
     // This is what i did #2
