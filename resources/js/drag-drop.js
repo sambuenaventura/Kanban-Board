@@ -140,8 +140,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
     }
 
     function updateTaskStatus(taskId, newStatus) {
-        fetch("/update-task-status", {
-            method: "POST",
+        fetch(`/tasks/${taskId}/status`, {
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRF-TOKEN": document
@@ -149,7 +149,6 @@ document.addEventListener("DOMContentLoaded", (event) => {
                     .getAttribute("content"),
             },
             body: JSON.stringify({
-                taskId: taskId,
                 newStatus: newStatus,
             }),
         })

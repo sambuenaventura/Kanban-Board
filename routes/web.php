@@ -23,7 +23,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
 
     Route::resource('tasks', TaskController::class); 
-    Route::post('/update-task-status', [TaskController::class, 'updateStatus']);
+    // Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     // Route::delete('/tasks/{task}/delete', [TaskController::class, 'deleteTask'])->name('tasks.deleteTask');
     Route::get('/tasks/tag/{tags?}', [TaskController::class, 'index']);
