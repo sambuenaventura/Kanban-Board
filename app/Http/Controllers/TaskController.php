@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -157,7 +158,7 @@ class TaskController extends Controller
     // }
 
 
-    public function update(StoreTaskRequest $request, Task $task)
+    public function update(UpdateTaskRequest $request, Task $task)
     {
         // Authorize the user
         $task = Task::forUser()->findOrFail($task->id);

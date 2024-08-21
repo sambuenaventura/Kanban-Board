@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreTaskRequest extends FormRequest
+class UpdateTaskRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,14 +22,15 @@ class StoreTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string'],
+            'name' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
             'description' => ['nullable', 'string'],
-            'due' => ['required', 'date'],
-            'priority' => ['required', 'string'],
-            'progress' => ['required', 'string'],
-            'tag' => ['required', 'string'],
+            'due' => $this->isMethod('post') ? ['required', 'date'] : ['sometimes', 'date'],
+            'priority' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
+            'progress' => ['required', 'string'], // assuming progress is always required
+            'tag' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
         ];
     }
+
 
     public function messages(): array
     {
