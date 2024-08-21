@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
+use App\Http\Requests\UpdateTaskStatusRequest;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\Task;
 use App\Models\User;
@@ -251,20 +252,19 @@ class TaskController extends Controller
     
     //     return response()->json(['success' => 'Task deleted successfully', 'task' => $task]);
     // }
-
-    public function updateStatus(Request $request)
+    public function updateStatus(UpdateTaskStatusRequest $request, Task $task)
     {
-        $request->validate([
-            'taskId' => 'required|exists:tasks,id',
-            'newStatus' => 'required|in:to_do,in_progress,done',
-        ]);
 
-        $task = Task::findOrFail($request->taskId);
+        if ($task->user_id !== auth()->id()) {
+            abort(403);
+        }
+    
         $task->progress = $request->newStatus;
         $task->save();
-
+    
         return response()->json(['message' => 'Task updated successfully', 'task' => $task]);
     }
+    
 
     private function countTodo($tasks) 
     {
