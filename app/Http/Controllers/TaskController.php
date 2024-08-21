@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
+use App\Http\Requests\UploadFileRequest;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -192,26 +193,13 @@ class TaskController extends Controller
     
 
 
-    public function uploadFile(Request $request, Task $task) {
-
-        $data = $request->validate([
-            'attachment' => ['required', 'file'],
-        ],
-        [
-            'attachment.required' => 'Please attach a file.',
-        ]);
+    public function uploadFile(UploadFileRequest $request, Task $task) {
         
         $taskName = $task->name;
-
-        // if ($request->hasFile('attachment')) {
-        //     $attachment = $request->file('attachment')->store('public');
-        //     $data['attachment'] = $attachment; // Add file path to $data
-        // }
 
         $task->addMediaFromRequest('attachment')->toMediaCollection('attachments');
 
         return to_route('tasks.show', $task)->with('success', 'Successfully added an attachment to ' . $taskName . '.');
-        // return to_route('tasks.show', $task)->with('success', 'Successfully added an attachment to ' . '\''. $taskName. '\'.'); // With ''
 
     }
 
