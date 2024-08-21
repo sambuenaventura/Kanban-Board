@@ -99,9 +99,12 @@ class TaskController extends Controller
      */
     public function edit(Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
+        $task = Task::forUser()->find($task->id);
+    
+        if (!$task) {
             abort(403);
         }
+        
         return view('task.edit' , ['task' => $task]);
     }
 
