@@ -221,30 +221,36 @@ class TaskController extends Controller
     }
     
 
-    // Function for the deleting in task details
-    public function destroy(Task $task)
+    public function destroy(Request $request, Task $task)
     {
         if ($task->user_id !== auth()->id()) {
             abort(403);
         }
-
+    
+        // Delete the task
         $task->delete();
-        
+    
+        // Check if the request expects a JSON response (for fetch API)
+        if ($request->expectsJson()) {
+            return response()->json(['success' => 'Task deleted successfully', 'task' => $task]);
+        }
+    
+        // Default response for web (HTML) requests
         return to_route('tasks.index')->with('success', 'Task deleted successfully.');
-
     }
+    
 
-    // Function for the fetch api
-    public function deleteTask(Task $task)
-    {
-        if ($task->user_id !== auth()->id()) {
-            abort(403);
-        }
+    // // Function for the fetch api
+    // public function deleteTask(Task $task)
+    // {
+    //     if ($task->user_id !== auth()->id()) {
+    //         abort(403);
+    //     }
     
-        $task->delete();
+    //     $task->delete();
     
-        return response()->json(['success' => 'Task deleted successfully', 'task' => $task]);
-    }
+    //     return response()->json(['success' => 'Task deleted successfully', 'task' => $task]);
+    // }
 
     public function updateStatus(Request $request)
     {

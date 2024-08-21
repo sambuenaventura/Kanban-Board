@@ -3,19 +3,20 @@ document.addEventListener("DOMContentLoaded", function () {
         element.addEventListener("click", function (event) {
             event.preventDefault();
             if (confirm("Are you sure you want to remove this task?")) {
-                deleteTask(this.getAttribute("data-task-id"));
+                destroy(this.getAttribute("data-task-id"));
             }
         });
     });
 });
 
-function deleteTask(taskId) {
-    fetch(`/tasks/${taskId}/delete`, {
+function destroy(taskId) {
+    fetch(`/tasks/${taskId}`, {
         method: "DELETE",
         headers: {
             "X-CSRF-TOKEN": document
                 .querySelector('meta[name="csrf-token"]')
                 .getAttribute("content"),
+            Accept: "application/json",
         },
     })
         .then((response) => {
