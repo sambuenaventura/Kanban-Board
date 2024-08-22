@@ -25,6 +25,14 @@ class Task extends Model implements HasMedia
         ->latest()
         ->paginate();
     }
+    
+    public static function getAllTags() 
+    {
+        return self::forUser()
+        ->distinct()
+        ->pluck('tag')
+        ->filter();
+    }
 
     public static function countTaskByStatus($tasks, $progress)
     {

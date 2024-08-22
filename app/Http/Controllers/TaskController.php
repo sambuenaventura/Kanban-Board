@@ -7,10 +7,7 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Requests\UpdateTaskStatusRequest;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\Task;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Notification;
-Use App\Notifications\MyFirstNotification;
 
 class TaskController extends Controller
 {
@@ -22,25 +19,16 @@ class TaskController extends Controller
     
         $tasks = Task::forUser()->filterByTags($tags)->get();
         
-        // Filter tasks by tags if any are selected
-        // $tasks = $this->filterTasksByTags($tasks, $tags);
-    
-
-
-        // Retrieve tasks in different statuses
         $toDoTasks = Task::getTaskByProgress($tasks, 'to_do');
         $inProgressTasks =  Task::getTaskByProgress($tasks, 'in_progress');
         $doneTasks =  Task::getTaskByProgress($tasks, 'done');
     
-        // Count tasks in each status
         $countToDo =  Task::countTaskByStatus($tasks, 'to_do');
         $countInProgress =  Task::countTaskByStatus($tasks, 'in_progress');
         $countDone =  Task::countTaskByStatus($tasks, 'done');
     
-        // Get all tags for filtering
-        $allTags = $this->getAllTags();
+        $allTags = Task::getAllTags();
     
-        // Convert tags from the URL into an array  
         $selectedTags = $tags ? explode(',', $tags) : [];
     
         return view('task.index', compact(
@@ -52,14 +40,11 @@ class TaskController extends Controller
             'countInProgress',
             'countDone',
             'allTags',
-            'selectedTags' // Pass selected tags to the view
+            'selectedTags'
         ));
     }
     
-    
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(StoreTaskRequest $request)
     {
         
@@ -71,20 +56,6 @@ class TaskController extends Controller
         return to_route('tasks.index')->with('success', 'Task created.');
     }
     
-    // public function filterTags(Request $request)
-    // {
-    
-    //     $data['user_id'] = $request->user()->id;
-    //     $task = Task::create($data);
-    
-    //     // Corrected return statement
-    //     return to_route('tasks.index')->with('success', 'Task was created');
-    // }
-
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Task $task)
     {
         $task = Task::forUser()->find($task->id);
@@ -96,10 +67,6 @@ class TaskController extends Controller
         return view('task.show', ['task' => $task]);
     }
     
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Task $task)
     {
         $task = Task::forUser()->find($task->id);
@@ -111,68 +78,16 @@ class TaskController extends Controller
         return view('task.edit' , ['task' => $task]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    // public function update(StoreTaskRequest $request, Task $task)
-    // {
-    //     $task = Task::forUser()->find($task->id);
-    
-    //     if (!$task) {
-    //         abort(403);
-    //     }
-        
-    //     $data = $request->validated();
-
-    //     $task->update($data);
-
-    //     return to_route('tasks.show', $task)->with('success', 'Task updated successfully.');
-    // }
-
-    // public function updateProgress(Request $request, Task $task) 
-    // {
-    //     if ($task->user_id !== auth()->id()) {
-    //         abort(403);
-    //     }
-
-    //     // $originalProgress = $task->progress;
-
-    //     $data = $request->validate([
-    //         'progress' => ['required', 'string'],
-    //     ]);
-
-    //     $task->update($data);
-
-    //     // Set the success message based on the original Progress
-    //     if ($data['progress'] == 'to_do') {
-    //         $message = 'Task reopened successfully.';
-
-    //     } elseif ($data['progress'] == 'in_progress') {
-    //         $message = 'Task started successfully.';
-
-    //     }
-    //     else {
-    //         $message = 'Task completed successfully.';
-    //     }
-
-
-    //     return to_route('tasks.show', $task)->with('success', $message);
-    // }
-
 
     public function update(UpdateTaskRequest $request, Task $task)
     {
-        // Authorize the user
         $task = Task::forUser()->findOrFail($task->id);
         
         $validatedData = $request->validated();
 
-        // Update the task
         $task->update($validatedData);
     
-        // Check the source to determine the success message
         if ($request->input('source') === 'progress' && isset($validatedData['progress']) && $task->wasChanged('progress')) {
-            // Progress-specific messages
             switch ($validatedData['progress']) {
                 case 'to_do':
                     $message = 'Task reopened successfully.';
@@ -185,14 +100,12 @@ class TaskController extends Controller
                     break;
             }
         } else {
-            // General success message for the edit page
             $message = 'Task updated successfully.';
         }
     
         return to_route('tasks.show', $task)->with('success', $message);
     }
     
-
 
     public function uploadFile(UploadFileRequest $request, Task $task) {
         
@@ -228,30 +141,15 @@ class TaskController extends Controller
             abort(403);
         }
     
-        // Delete the task
         $task->delete();
     
-        // Check if the request expects a JSON response (for fetch API)
         if ($request->expectsJson()) {
             return response()->json(['success' => 'Task deleted successfully', 'task' => $task]);
         }
     
-        // Default response for web (HTML) requests
         return to_route('tasks.index')->with('success', 'Task deleted successfully.');
     }
     
-
-    // // Function for the fetch api
-    // public function deleteTask(Task $task)
-    // {
-    //     if ($task->user_id !== auth()->id()) {
-    //         abort(403);
-    //     }
-    
-    //     $task->delete();
-    
-    //     return response()->json(['success' => 'Task deleted successfully', 'task' => $task]);
-    // }
     public function updateStatus(UpdateTaskStatusRequest $request, Task $task)
     {
 
@@ -264,15 +162,5 @@ class TaskController extends Controller
     
         return response()->json(['message' => 'Task updated successfully', 'task' => $task]);
     }
-
-    // This is what i did #2
-    private function getAllTags() 
-    {
-        return Task::where('user_id', auth()->id())
-            ->distinct()
-            ->pluck('tag')
-            ->filter(); // This removes any null or empty string tags
-    }
-   
 
 }
