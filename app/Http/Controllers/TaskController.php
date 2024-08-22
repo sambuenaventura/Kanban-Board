@@ -7,10 +7,12 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Requests\UpdateTaskStatusRequest;
 use App\Http\Requests\UploadFileRequest;
 use App\Models\Task;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
+    use AuthorizesRequests;
 
 
     public function index(Request $request, $tags = null)
@@ -47,7 +49,6 @@ class TaskController extends Controller
 
     public function store(StoreTaskRequest $request)
     {
-        
         $data = $request->validated();
         $data['user_id'] = $request->user()->id;
     
@@ -58,30 +59,19 @@ class TaskController extends Controller
     
     public function show(Task $task)
     {
-        $task = Task::forUser()->find($task->id);
-    
-        if (!$task) {
-            abort(403);
-        }
-    
+        $this->authorize('owner', $task);
+
         return view('task.show', ['task' => $task]);
     }
     
     public function edit(Task $task)
     {
-        $task = Task::forUser()->find($task->id);
-    
-        if (!$task) {
-            abort(403);
-        }
-        
         return view('task.edit' , ['task' => $task]);
     }
 
-
     public function update(UpdateTaskRequest $request, Task $task)
     {
-        $task = Task::forUser()->findOrFail($task->id);
+        $this->authorize('owner', $task);
         
         $validatedData = $request->validated();
 
@@ -107,40 +97,21 @@ class TaskController extends Controller
     }
     
 
-    public function uploadFile(UploadFileRequest $request, Task $task) {
-        
+    public function uploadFile(UploadFileRequest $request, Task $task) 
+    {
+        $this->authorize('owner', $task);
+
         $taskName = $task->name;
 
         $task->addMediaFromRequest('attachment')->toMediaCollection('attachments');
 
         return to_route('tasks.show', $task)->with('success', 'Successfully added an attachment to ' . $taskName . '.');
-
     }
-
-    public function destroyFile(Task $task, $attachmentId)
-    {
-        if ($task->user_id !== auth()->id()) {
-            abort(403);
-        }
-    
-        $attachmentItem = $task->media()->findOrFail($attachmentId);
-    
-        if ($attachmentItem) {
-            $attachmentItem->delete();
-        } else {
-            return redirect()->route('tasks.show', $task)->with('error', 'Attachment item not found.');
-        }
-    
-        return redirect()->route('tasks.show', $task)->with('success', 'Attachment deleted successfully.');
-    }
-    
 
     public function destroy(Request $request, Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
-            abort(403);
-        }
-    
+        $this->authorize('owner', $task);
+
         $task->delete();
     
         if ($request->expectsJson()) {
@@ -149,17 +120,25 @@ class TaskController extends Controller
     
         return to_route('tasks.index')->with('success', 'Task deleted successfully.');
     }
+
+    public function destroyFile(Task $task, $attachmentId)
+    {
+        $this->authorize('owner', $task);
+
+        if ($attachmentItem = $task->media()->findOrFail($attachmentId)) {
+            $attachmentItem->delete();
+        } else {
+            return redirect()->route('tasks.show', $task)->with('error', 'Attachment item not found.');
+        }
+    
+        return redirect()->route('tasks.show', $task)->with('success', 'Attachment deleted successfully.');
+    }
     
     public function updateStatus(UpdateTaskStatusRequest $request, Task $task)
     {
-
-        if ($task->user_id !== auth()->id()) {
-            abort(403);
-        }
-    
         $task->progress = $request->newStatus;
         $task->save();
-    
+
         return response()->json(['message' => 'Task updated successfully', 'task' => $task]);
     }
 
