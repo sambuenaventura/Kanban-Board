@@ -56,8 +56,36 @@ class Task extends Model implements HasMedia
         })->sortKeys();
     }
 
+    
+    public function getFormattedPriorityAttribute()
+    {
+        switch ($this->priority) {
+            case 'low':
+                return 'L';
+            case 'medium':
+                return 'M';
+            case 'high':
+                return 'H';
+            default:
+                return '';
 
+        }
+    }
 
-
+    // public function getPriorityCssClassAttribute()
+    // {
+    //     switch ($this->priority) {
+    //         case 'low':
+    //             return 'bg-yellow-200';
+    //         case 'medium':
+    //             return 'bg-green-200';
+    //         case 'high':
+    //             return 'bg-red-200';
+    //         default:
+    //             return 'text-gray-500 bg-gray-200';
+    //     }
+    // }
+    
+    
 
 }
