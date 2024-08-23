@@ -137,7 +137,7 @@
                             <div class="h-full flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 overflow-x-auto">
                                 <!-- To Do Column -->
                                 <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                                    <h4 class="font-semibold text-center bg-blue-600 p-4 text-white">To Do <span class="text-xs task-count">({{ $countToDo }})</span></h4>
+                                    <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $countToDo }})</span></h4>
                                     <div id="todo-list" class="kanban-column p-4 flex-grow overflow-y-auto" data-column="to_do">
                                         @foreach ($toDoTasks as $date => $tasksForDate)
                                             <div class="mb-4">
@@ -154,8 +154,8 @@
                                                                         </a>
                                                                     </div>
                                                                     <div class="flex items-center space-x-2 flex-shrink-0">
-                                                                        <span class="px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-200 rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
-                                                                            {{ $task->priority }}
+                                                                        <span class="px-2 py-1 text-xs font-semibold text-yellow-700  {{ $task->priority === 'high' ? 'bg-red-200' : ($task->priority === 'medium' ? 'bg-orange-200' : 'bg-yellow-200') }} rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
+                                                                            {{ $task->formatted_priority }}
                                                                         </span>
                                                                         <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-200 rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
                                                                             {{ $task->tag }}
@@ -181,7 +181,7 @@
                                 </div>                    
                                 <!-- In Progress Column -->
                                 <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                                    <h4 class="font-semibold text-center bg-yellow-600 p-4 text-white">In Progress <span class="text-xs task-count">({{ $countInProgress }})</span></h4>
+                                    <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $countInProgress }})</span></h4>
                                     <div id="in-progress-list" class="kanban-column p-4 flex-grow overflow-y-auto" data-column="in_progress">
                                         @foreach ($inProgressTasks as $date => $tasksForDate)
                                             <div class="mb-4">
@@ -198,8 +198,8 @@
                                                                     </a>
                                                                 </div>
                                                                 <div class="flex items-center space-x-2 flex-shrink-0">
-                                                                    <span class="px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-200 rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
-                                                                        {{ $task->priority }}
+                                                                    <span class="px-2 py-1 text-xs font-semibold text-yellow-700  {{ $task->priority === 'high' ? 'bg-red-200' : ($task->priority === 'medium' ? 'bg-orange-200' : 'bg-yellow-200') }} rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
+                                                                        {{ $task->formatted_priority }}
                                                                     </span>
                                                                     <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-200 rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
                                                                         {{ $task->tag }}
@@ -225,7 +225,7 @@
                                 </div>
                                 <!-- Done Column -->
                                 <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                                    <h4 class="font-semibold text-center bg-green-600 p-4 text-white">Done <span class="text-xs task-count">({{ $countDone }})</span></h4>
+                                    <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">Done <span class="text-xs task-count">({{ $countDone }})</span></h4>
                                     <div id="done-list" class="kanban-column p-4 flex-grow overflow-y-auto" data-column="done">
                                         @foreach ($doneTasks as $date => $tasksForDate)
                                             <div class="mb-4">
@@ -242,8 +242,8 @@
                                                                     </a>
                                                                 </div>
                                                                 <div class="flex items-center space-x-2 flex-shrink-0">
-                                                                    <span class="px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-200 rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
-                                                                        {{ $task->priority }}
+                                                                    <span class="px-2 py-1 text-xs font-semibold text-yellow-700  {{ $task->priority === 'high' ? 'bg-red-200' : ($task->priority === 'medium' ? 'bg-orange-200' : 'bg-yellow-200') }} rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
+                                                                        {{ $task->formatted_priority }}
                                                                     </span>
                                                                     <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-200 rounded-full whitespace-nowrap" :class="{ 'text-task_tag': showFilters }">
                                                                         {{ $task->tag }}

@@ -1,7 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+* {
+    font-family: "Inter", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
 .completed {
     text-decoration: line-through;
 }
@@ -116,18 +123,17 @@ select:focus {
 /* Change text color when input is not empty */
 input[type="date"]:not(:placeholder-shown),
 select:not(:placeholder-shown) {
-    color: #000; /* black */
+    color: #000;
 }
 .modal-content img {
-    max-width: 90vw; /* Limit the image width to 90% of the viewport width */
-    max-height: 90vh; /* Limit the image height to 90% of the viewport height */
-    object-fit: contain; /* Maintain aspect ratio and ensure the entire image fits within the container */
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
 }
 .modal-content {
-    position: relative; /* Ensure the close button is positioned relative to the modal */
-    overflow: hidden; /* Prevent overflow from large images */
+    position: relative;
+    overflow: hidden;
 }
-/* In your CSS file or <style> section */
 .no-scroll {
     overflow: hidden;
 }
