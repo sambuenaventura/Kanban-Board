@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\TaskController;
 use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
+use Laravel\Socialite\Facades\Socialite;
 
 Route::get('/', function () {
     return view('welcome');
@@ -20,6 +22,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/auth/redirect', function() {
+    return Socialite::driver('github')->redirect();
+});
+
+Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
+
+
 Route::middleware('auth')->group(function () {
 
     Route::resource('tasks', TaskController::class); 
@@ -27,7 +36,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
     // Route::delete('/tasks/{task}/delete', [TaskController::class, 'deleteTask'])->name('tasks.deleteTask');
+
     Route::get('/tasks/tag/{tags?}', [TaskController::class, 'index']);
+    Route::get('/tasks/priority/{priorities?}', [TaskController::class, 'index']);
+    
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::post('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
     
@@ -38,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/tasks/{task}/files/{attachment}', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
 
 });
+
+
 
 Route::get('send-email',[TaskController::class, "sendEmail"]);
 
