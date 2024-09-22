@@ -1,52 +1,63 @@
-document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll(".confirm-remove").forEach((element) => {
-        element.addEventListener("click", function (event) {
+document.addEventListener("DOMContentLoaded", () => {
+    let taskIdToRemove;
+
+    // Show modal and set the task ID
+    document.querySelectorAll(".confirm-remove").forEach((link) => {
+        link.addEventListener("click", (event) => {
             event.preventDefault();
-            if (confirm("Are you sure you want to remove this task?")) {
-                destroy(this.getAttribute("data-task-id"));
-            }
+            taskIdToRemove = event.target.dataset.taskId; // Get task ID from data attribute
+            document.getElementById("removeTaskModal").style.display = "block"; // Show the modal
         });
     });
-});
 
-function destroy(taskId) {
-    fetch(`/tasks/${taskId}`, {
-        method: "DELETE",
-        headers: {
-            "X-CSRF-TOKEN": document
-                .querySelector('meta[name="csrf-token"]')
-                .getAttribute("content"),
-            Accept: "application/json",
-        },
-    })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-            return response.json();
-        })
-        .then((data) => {
-            console.log("Task deleted successfully:", data);
+    // Confirm removal
+    document
+        .getElementById("confirmRemoveBtn")
+        .addEventListener("click", () => {
+            fetch(`/tasks/${taskIdToRemove}/remove`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then(() => {
+                    // Remove the task from the DOM
+                    const taskElement = document.querySelector(
+                        `li[data-task-id="${taskIdToRemove}"]`
+                    );
+                    if (taskElement) {
+                        const taskList = taskElement.closest("ul"); // Get the task list
+                        taskElement.remove(); // Remove the task element
 
-            // Find the task element
-            const taskElement = document.querySelector(
-                `[data-task-id="${taskId}"]`
-            );
-            const listItem = taskElement.closest("li");
-            const dateGroup = listItem.closest(".mb-4");
-            const taskList = dateGroup.querySelector("ul");
+                        // Check if there are any remaining tasks
+                        const remainingTasks = taskList.querySelectorAll("li");
+                        if (remainingTasks.length === 0) {
+                            const dateBlock = taskList.closest(".mb-4"); // Get the parent block of the task list
+                            dateBlock.remove(); // Remove the entire block if no tasks are left
+                        }
 
-            // Remove the task from the UI
-            listItem.remove();
-
-            // Check if this was the last task for the date
-            if (taskList.children.length === 0) {
-                // If no tasks left, remove the entire date group
-                dateGroup.remove();
-            }
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            alert("Failed to delete task. Please try again.");
+                        // Log success message
+                        console.log(
+                            `Task with ID ${taskIdToRemove} deleted successfully.`
+                        );
+                    }
+                    document.getElementById("removeTaskModal").style.display =
+                        "none"; // Hide the modal
+                })
+                .catch((error) => console.error("Error:", error));
         });
-}
+
+    // Cancel removal
+    document.getElementById("cancelRemoveBtn").addEventListener("click", () => {
+        document.getElementById("removeTaskModal").style.display = "none"; // Hide the modal
+    });
+});

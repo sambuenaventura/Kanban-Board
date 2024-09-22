@@ -1,7 +1,5 @@
 const modal = document.getElementById("todoModal");
 const openBtn = document.getElementById("openModalBtn");
-// const closeBtn = document.getElementById("closeModalBtn");
-// const closeBtn2 = document.getElementById("closeModalBtn2");
 
 const closeButtons = document.querySelectorAll(
     "#closeModalBtn, #closeModalBtn2"
@@ -10,10 +8,6 @@ const closeButtons = document.querySelectorAll(
 openBtn.onclick = function () {
     modal.style.display = "block";
 };
-
-// closeBtn.onclick = function () {
-//     modal.style.display = "none";
-// };
 
 closeButtons.forEach((btn) => {
     btn.onclick = function () {

@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
                     .getAttribute("content"),
             },
             body: JSON.stringify({
-                newStatus: newStatus,
+                progress: newStatus, // Update this line to use 'progress'
             }),
         })
             .then((response) => {

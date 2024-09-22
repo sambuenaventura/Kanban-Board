@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\BoardController;
+use App\Http\Controllers\BoardUserController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\TaskController;
@@ -28,45 +31,45 @@ Route::get('/auth/redirect', function() {
 
 Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
-
-Route::middleware('auth')->group(function () {
-
-    Route::resource('tasks', TaskController::class); 
-    // Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
-    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
-    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
-    // Route::delete('/tasks/{task}/delete', [TaskController::class, 'deleteTask'])->name('tasks.deleteTask');
-
-    Route::get('/tasks/tag/{tags?}', [TaskController::class, 'index']);
-    Route::get('/tasks/priority/{priorities?}', [TaskController::class, 'index']);
+Route::middleware(['auth'])->group(function () {
     
-    Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
-    Route::post('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
-    
-    Route::post('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
-    // Route::patch('/tasks/{task}', [TaskController::class, 'updateProgress'])->name('tasks.updateProgress');
-    
+    // Board routes
+    Route::get('/boards', [BoardController::class, 'index'])->name('boards.index');
+    Route::get('/boards/create', [BoardController::class, 'create'])->name('boards.create');
+    Route::post('/boards', [BoardController::class, 'store'])->name('boards.store');
+    Route::get('/boards/{id}', [BoardController::class, 'show'])->name('boards.show');
+    Route::get('/boards/{id}/edit', [BoardController::class, 'edit'])->name('boards.edit');
+    Route::put('/boards/{id}', [BoardController::class, 'update'])->name('boards.update');
+    Route::delete('/boards/{id}', [BoardController::class, 'destroy'])->name('boards.destroy');
+    Route::get('/boards/{id}', [BoardController::class, 'show'])->name('boards.show'); // Query Parameter Approach
+
+    // Task routes under a specific board
+    Route::get('/boards/{boardId}/tasks', [TaskController::class, 'index'])->name('boards.tasks.index');
+    Route::get('/boards/{boardId}/tasks/create', [TaskController::class, 'create'])->name('boards.tasks.create');
+    Route::post('/boards/{boardId}/tasks', [TaskController::class, 'store'])->name('boards.tasks.store');
+    Route::get('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'show'])->name('boards.tasks.show');
+    Route::get('/boards/{boardId}/tasks/{taskId}/edit', [TaskController::class, 'edit'])->name('boards.tasks.edit');
+    Route::patch('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'update'])->name('boards.tasks.update');
+    Route::delete('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'destroy'])->name('boards.tasks.destroy');
+
+    // Board user management routes
+    Route::post('/boards/{board}/add-user', [BoardUserController::class, 'addUserToBoard'])->name('boards.addUser');
+    Route::delete('/boards/{board}/remove-user/{user}', [BoardUserController::class, 'removeUserFromBoard'])->name('boards.removeUser');
+
+    // Task-specific actions
+    Route::delete('/tasks/{id}/remove', [TaskController::class, 'remove'])->name('tasks.remove');       
+    Route::patch('/tasks/{taskId}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     Route::post('/tasks/{task}/files', [TaskController::class, 'uploadFile'])->name('tasks.uploadFile');
-    Route::delete('/tasks/{task}/files/{attachment}', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
+    Route::delete('/tasks/{task}/{attachment}/files', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
 
 });
-
 
 
 Route::get('send-email',[TaskController::class, "sendEmail"]);
 
-Route::get('/testroute', function() {
-    $name = "Funny coder";
 
-    Mail::to('ismokecarrots@gmail.com')->send(new WelcomeMail($name));
-});
+Route::get('/testroute', [NotificationController::class, 'sendEmail']);
 
-    // Route::get('/notes', [NoteController::class, 'index'])->name('notes.index');
-    // Route::get('/notes/create', [NoteController::class, 'create'])->name('notes.create');
-    // Route::post('/notes', [NoteController::class, 'store'])->name('notes.store');
-    // Route::get('/notes/{note}', [NoteController::class, 'show'])->name('notes.show');
-    // Route::get('/notes/{note}/edit', [NoteController::class, 'edit'])->name('notes.edit');
-    // Route::put('/notes/{note}', [NoteController::class, 'update'])->name('notes.update');
-    // Route::delete('/notes/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
+Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 require __DIR__.'/auth.php';

@@ -1,4 +1,3 @@
-// resources/js/tag-filter.js
 window.applyFilters = function () {
     const form = document.getElementById("filter-form");
     const checkboxes = form.querySelectorAll('input[type="checkbox"]:checked');
@@ -6,10 +5,13 @@ window.applyFilters = function () {
         (checkbox) => checkbox.value
     );
 
-    // Construct the URL with selected tags
-    let url = "/tasks";
+    // Get the current board ID from the URL
+    const boardId = window.location.pathname.split("/")[2];
+
+    // Construct the URL with the selected tags
+    let url = `/boards/${boardId}`;
     if (selectedTags.length > 0) {
-        url += "/tag/" + encodeURIComponent(selectedTags.join(","));
+        url += `?tags=${encodeURIComponent(selectedTags.join(","))}`;
     }
 
     // Debug: Log the URL to ensure it's correct

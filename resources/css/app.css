@@ -143,3 +143,21 @@ select {
     text-indent: 1px;
     text-overflow: "";
 }
+
+/* edit-progress-dropdown.css */
+.task-progress-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    text-indent: 1px;
+    text-overflow: "";
+}
+
+.task-progress-select::-ms-expand {
+    display: none;
+}
+
+.task-progress-select option {
+    background-color: white;
+    color: #1a202c;
+    font-weight: 600;
+}

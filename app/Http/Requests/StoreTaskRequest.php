@@ -28,6 +28,8 @@ class StoreTaskRequest extends FormRequest
             'priority' => ['required', 'string'],
             'progress' => ['required', 'string'],
             'tag' => ['required', 'string'],
+            'board_id' => ['required', 'exists:boards,id'], // Validate that board_id exists in boards table
+            'idempotency_key' => ['required', 'string'],
         ];
     }
 
@@ -39,6 +41,9 @@ class StoreTaskRequest extends FormRequest
             'priority.required' => 'The priority is required.',
             'progress.required' => 'The progress is required.',
             'tag.required' => 'A tag is required.',
+            'board_id.required' => 'The board ID is required.',
+            'board_id.exists' => 'The selected board ID is invalid.',
+            'idempotency_key.required' => 'The idempotency key is required.',
         ];
     }
 }

@@ -21,7 +21,14 @@
                 'resources/js/update-time.js',
                 'resources/js/add-todo-modal.js',
                 'resources/js/tag-filter.js',
-                'resources/js/attachment-modal.js'
+                'resources/js/attachment-modal.js',
+                'resources/js/edit-progress-dropdown.js',
+                'resources/js/add-board-modal.js',
+                'resources/js/edit-board-modal.js',
+                'resources/js/delete-board-modal.js',
+                'resources/js/delete-task-modal.js',
+                'resources/js/add-collaborator-modal',
+                'resources/js/delete-attachment-modal.js',
                 ])
 
     </head>
