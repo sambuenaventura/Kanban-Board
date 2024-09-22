@@ -3,11 +3,8 @@ function updateDateTime() {
     const datePlaceholder = document.getElementById("datePlaceholder");
     const currentDateTime = new Date();
 
-    // Set the time zone to Manila/Philippine time
     const timeZone = "Asia/Manila";
 
-    // Options for formatting time
-    //const timeOptions = { timeZone, hour12: true, hour: 'numeric', minute: 'numeric', second: 'numeric' };
     const timeOptions = {
         timeZone,
         hour12: true,
@@ -20,7 +17,6 @@ function updateDateTime() {
     );
     timePlaceholder.innerText = formattedTime;
 
-    // Options for formatting date
     const dateOptions = {
         timeZone,
         weekday: "long",

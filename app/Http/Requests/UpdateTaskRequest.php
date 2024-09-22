@@ -26,7 +26,7 @@ class UpdateTaskRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'due' => $this->isMethod('post') ? ['required', 'date'] : ['sometimes', 'date'],
             'priority' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
-            'progress' => ['required', 'string'], // assuming progress is always required
+            'progress' => ['required', 'string'],
             'tag' => $this->isMethod('post') ? ['required', 'string'] : ['sometimes', 'string'],
         ];
     }

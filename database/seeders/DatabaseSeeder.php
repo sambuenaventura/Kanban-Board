@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BoardUser;
 use App\Models\Task;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -21,13 +22,17 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
-        Task::factory()->create([
-            'user_id' => 4,
-            'name' => 'Sample Task',
-            'due' => '2024-08-03',
-            'priority' => 'medium',
-            'progress' => 'to_do',
-            'tag' => 'Shopping'
+        $boardUser = BoardUser::updateOrCreate(
+            ['board_id' => 60, 'user_id' => 5], // Check for existing entry
+            [
+                'role' => 'owner' // Set role
+            ]
+        );
+
+        // Create tasks for the hard-coded board and user
+        Task::factory()->count(10)->create([
+            'board_id' => 60,               // Hard-coded board ID
+            'board_user_id' => $boardUser->id,
         ]);
     }
 }

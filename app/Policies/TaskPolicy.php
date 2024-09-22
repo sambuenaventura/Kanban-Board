@@ -15,13 +15,8 @@ class TaskPolicy
         //
     }
 
-    private function authorizeAction(User $user, Task $task)
-    {
-        return $user->id === $task->user_id;
-    }
-
     public function owner(User $user, Task $task)
     {
-        return $this->authorizeAction($user, $task);
+        return $user->id === $task->user_id;
     }
 }

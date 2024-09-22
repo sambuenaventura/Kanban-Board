@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -11,8 +12,30 @@ class Task extends Model implements HasMedia
 {
     use HasFactory;
     use InteractsWithMedia;
+    
+    protected $fillable = [
+        'board_id',
+        'board_user_id',
+        'name',
+        'description',
+        'due',
+        'priority',
+        'progress',
+        'tag',
+        'attachment',
+    ];
 
-    protected $fillable = ['user_id', 'name', 'description', 'due', 'priority', 'progress', 'tag'];
+    public function board()
+    {
+        return $this->belongsTo(Board::class);
+    }
+
+    public function boardUser()
+    {
+        return $this->belongsTo(BoardUser::class);
+    }
+
+
 
     public function scopeForUser($query)
     {
@@ -51,9 +74,11 @@ class Task extends Model implements HasMedia
 
     public static function getTaskByProgress($tasks, $progress)
     {
-        return $tasks->where('progress', $progress)->groupBy(function($task) {
-            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
-        })->sortKeys();
+        return $tasks->where('progress', $progress)
+                        ->groupBy(function($task) 
+                        {
+                            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
+                        })->sortKeys();
     }
 
     
@@ -61,31 +86,36 @@ class Task extends Model implements HasMedia
     {
         switch ($this->priority) {
             case 'low':
-                return 'L';
+                return 'Low';
             case 'medium':
-                return 'M';
+                return 'Medium';
             case 'high':
-                return 'H';
+                return 'High';
             default:
                 return '';
 
         }
     }
-
-    // public function getPriorityCssClassAttribute()
-    // {
-    //     switch ($this->priority) {
-    //         case 'low':
-    //             return 'bg-yellow-200';
-    //         case 'medium':
-    //             return 'bg-green-200';
-    //         case 'high':
-    //             return 'bg-red-200';
-    //         default:
-    //             return 'text-gray-500 bg-gray-200';
-    //     }
-    // }
     
+    public static function getDues($tasks)
+    {
+        $today = (new DateTime())->format('Y-m-d');
+        $yesterday = (new DateTime())->modify('-1 day')->format('Y-m-d');
+        $tomorrow = (new DateTime())->modify('+1 day')->format('Y-m-d');
     
-
+        foreach ($tasks as $task) {
+            if ($task->due === $today) {
+                $task->due_day = 'Due Today';
+            } elseif ($task->due === $yesterday) {
+                $task->due_day = 'Due Yesterday';
+            } elseif ($task->due === $tomorrow) {
+                $task->due_day = 'Due Tomorrow';
+            } else {
+                $task->due_day = '';
+            }
+        }
+    
+        return $tasks;
+    }
+    
 }
