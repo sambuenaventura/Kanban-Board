@@ -83,7 +83,8 @@ class BoardController extends Controller
 
     public function show($id, Request $request, Board $board)
     {
-        $board = Board::with('tasks')->findOrFail($id);
+        $board = Board::with('tasks', 'collaborators')->findOrFail($id);
+
         $tasks = $board->getUserTasks();
         
         $collaborators = $board->collaborators ?? collect();
@@ -108,7 +109,7 @@ class BoardController extends Controller
         } else {
             $selectedTags = [];
         }
-    
+        // dd($tasks);
         $toDoTasks = Board::getTaskByProgress($tasks, 'to_do');
         $inProgressTasks = Board::getTaskByProgress($tasks, 'in_progress');
         $doneTasks = Board::getTaskByProgress($tasks, 'done');
