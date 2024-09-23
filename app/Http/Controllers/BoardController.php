@@ -29,8 +29,24 @@ class BoardController extends Controller
                                     });
                         })
                         ->get();
+
+        $boardsOwned = Board::with(['user'])
+                            ->withCount(['tasks', 'boardUsers'])
+                            ->where(function ($query) use ($userId) {
+                                $query->where('user_id', $userId);
+                            })
+                            ->get();
+
+        $boardsCollaborated = Board::with(['collaborators'])
+                            ->withCount(['tasks', 'boardUsers'])
+                            ->orWhereHas('collaborators', function ($subQuery) use ($userId) {
+                                $subQuery->where('users.id', $userId); 
+                            })
+                            ->get();
+
+                            
     
-        return view('boards.index', compact('boards', 'userId'));
+        return view('boards.index', compact('boards', 'userId', 'boardsOwned', 'boardsCollaborated'));
     }
 
     public function create()
