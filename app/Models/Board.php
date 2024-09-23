@@ -58,6 +58,11 @@ class Board extends Model
             return $this->tasks;
         }
 
+        // If the user is a collaborator, return tasks
+        if ($this->collaborators->contains(Auth::id())) {
+            return $this->tasks;
+        }
+
         return collect();
     }
 
