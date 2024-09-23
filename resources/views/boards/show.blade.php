@@ -78,7 +78,7 @@
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $countToDo }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="to_do">
-                                @foreach ($toDoTasks as $date => $tasksForDate)
+                                @forelse ($toDoTasks as $date => $tasksForDate)
                                     <div class="mb-4">
                                         <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
                                         <ul class="space-y-3">
@@ -119,16 +119,19 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                @endforeach
+                                    @empty
+                                    <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
+                                        <p class="text-gray-600 text-lg">No tasks in the To Do column.</p>
+                                    </div>                                    
+                                @endforelse                            
                             </div>
                         </div>
-
 
                         <!-- In Progress Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $countInProgress }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="in_progress">
-                                @foreach ($inProgressTasks as $date => $tasksForDate)
+                                @forelse ($inProgressTasks as $date => $tasksForDate)
                                     <div class="mb-4">
                                         <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
                                         <ul class="space-y-3">
@@ -169,7 +172,11 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                @endforeach
+                                    @empty
+                                    <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
+                                        <p class="text-gray-600 text-lg">No tasks currently in progress.</p>
+                                    </div>                                    
+                                @endforelse                            
                             </div>
                         </div>
 
@@ -177,7 +184,7 @@
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">Done <span class="text-xs task-count">({{ $countDone }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="done">
-                                @foreach ($doneTasks as $date => $tasksForDate)
+                                @forelse ($doneTasks as $date => $tasksForDate)
                                     <div class="mb-4">
                                         <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
                                         <ul class="space-y-3">
@@ -218,7 +225,11 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                @endforeach
+                                    @empty
+                                    <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
+                                        <p class="text-gray-600 text-lg">No tasks in the Done column.</p>
+                                    </div>                                    
+                                @endforelse
                             </div>
                         </div>
 
