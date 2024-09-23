@@ -15,12 +15,7 @@ class TaskPolicy
         //
     }
 
-    public function owner(User $user, Task $task)
-    {
-        return $user->id === $task->user_id;
-    }
-
-    public function attachment(User $user, Task $task)
+    public function isOwnerOrCollaborator(User $user, Task $task)
     {
         // Check if the user is the owner of the board
         if ($task->board->user_id === $user->id) {
@@ -35,5 +30,5 @@ class TaskPolicy
         // If neither, deny access
         return false;
     }
-    
+
 }
