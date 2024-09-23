@@ -37,12 +37,14 @@
                                 </svg>
                                 Add Todo
                             </button>
-                            <button id="openCollaboratorModalBtn" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 active:bg-green-700 focus:outline-none focus:border-green-700 focus:ring focus:ring-green-300 disabled:opacity-25 transition">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                                </svg>
-                                Add Collaborator
-                            </button>
+                            @if ($board->user_id == Auth::id())
+                                <button id="openCollaboratorModalBtn" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 active:bg-green-700 focus:outline-none focus:border-green-700 focus:ring focus:ring-green-300 disabled:opacity-25 transition">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                                    </svg>
+                                    Add Collaborator
+                                </button>
+                            @endif
                         </div>
                     </div>
                     
@@ -78,7 +80,7 @@
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $countToDo }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="to_do">
-                                @forelse ($toDoTasks as $date => $tasksForDate)
+                                @foreach ($toDoTasks as $date => $tasksForDate)
                                     <div class="mb-4">
                                         <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
                                         <ul class="space-y-3">
@@ -119,11 +121,11 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                    @empty
+                                    {{-- @empty
                                     <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
                                         <p class="text-gray-600 text-lg">No tasks in the To Do column.</p>
-                                    </div>                                    
-                                @endforelse                            
+                                    </div>                                     --}}
+                                @endforeach                            
                             </div>
                         </div>
 
@@ -131,7 +133,7 @@
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $countInProgress }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="in_progress">
-                                @forelse ($inProgressTasks as $date => $tasksForDate)
+                                @foreach ($inProgressTasks as $date => $tasksForDate)
                                     <div class="mb-4">
                                         <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
                                         <ul class="space-y-3">
@@ -172,11 +174,11 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                    @empty
+                                    {{-- @empty
                                     <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
                                         <p class="text-gray-600 text-lg">No tasks currently in progress.</p>
-                                    </div>                                    
-                                @endforelse                            
+                                    </div>                                     --}}
+                                @endforeach                     
                             </div>
                         </div>
 
@@ -184,7 +186,7 @@
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">Done <span class="text-xs task-count">({{ $countDone }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="done">
-                                @forelse ($doneTasks as $date => $tasksForDate)
+                                @foreach ($doneTasks as $date => $tasksForDate)
                                     <div class="mb-4">
                                         <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
                                         <ul class="space-y-3">
@@ -199,7 +201,7 @@
                                                     <div class="flex items-center justify-between {{ $task->due_day ? 'mt-6' : '' }}">
                                                         <div class="inline-block">
                                                             <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="inline group">
-                                                                <span class="text-gray-700 hover:text-blue-600 transition-all duration-200">{{ $task->name }}</span>
+                                                                <span class="text-gray-700 hover:text-blue-600 transition-all duration-200 strikethrough">{{ $task->name }}</span>
                                                             </a>
                                                         </div>
                                                         <div class="flex items-center space-x-2 flex-shrink-0">
@@ -225,11 +227,11 @@
                                             @endforeach
                                         </ul>
                                     </div>
-                                    @empty
+                                    {{-- @empty
                                     <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
                                         <p class="text-gray-600 text-lg">No tasks in the Done column.</p>
-                                    </div>                                    
-                                @endforelse
+                                    </div>                                     --}}
+                                @endforeach
                             </div>
                         </div>
 
