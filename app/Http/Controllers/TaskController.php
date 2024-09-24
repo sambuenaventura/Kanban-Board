@@ -228,7 +228,7 @@ class TaskController extends Controller
 
     public function destroyFile(Task $task, $attachmentId)
     {  
-        // $this->authorize('owner', $task);
+        $this->authorize('isOwnerOrCollaborator', $task);
 
         $media = $task->getMedia('attachments')->find($attachmentId);
         if ($media) {
