@@ -9,7 +9,16 @@ use Illuminate\Http\Request;
 
 class BoardUserController extends Controller
 {
-    public function addUserToBoard(Request $request, $boardId)
+
+    public function removeUserFromBoard(Board $board, User $user)
+    {
+
+        $this->authorize('delete', $board);
+
+        $board->users()->detach($user->id);
+        return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
+    }
+
     {
         // Validate the request data
         $request->validate([
