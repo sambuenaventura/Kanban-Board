@@ -90,9 +90,16 @@ class BoardUserController extends Controller
         return redirect()->route('dashboard')->with('success', 'You declined the invitation.');
     }
     
+    public function manageInvitations()
     {
-        $board->users()->detach($user->id);
-        return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
+        $pendingInvitations = BoardInvitation::where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->with(['board', 'inviter'])
+            ->get();
+    
+        return view('boards.manage-invitations', compact('pendingInvitations'));
+    }
+    
     }
 
 
