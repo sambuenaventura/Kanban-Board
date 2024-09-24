@@ -51,7 +51,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/boards/{id}/edit', [BoardController::class, 'edit'])->name('boards.edit');
     Route::put('/boards/{id}', [BoardController::class, 'update'])->name('boards.update');
     Route::delete('/boards/{id}', [BoardController::class, 'destroy'])->name('boards.destroy');
-    Route::get('/boards/{id}', [BoardController::class, 'show'])->name('boards.show'); // Query Parameter Approach
 
     // Task routes under a specific board
     Route::get('/boards/{boardId}/tasks', [TaskController::class, 'index'])->name('boards.tasks.index');
@@ -62,16 +61,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'update'])->name('boards.tasks.update');
     Route::delete('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'destroy'])->name('boards.tasks.destroy');
 
-    // Board user management routes
-    Route::post('/boards/{board}/add-user', [BoardUserController::class, 'addUserToBoard'])->name('boards.addUser');
-    Route::delete('/boards/{board}/remove-user/{user}', [BoardUserController::class, 'removeUserFromBoard'])->name('boards.removeUser');
-
     // Task-specific actions
     Route::delete('/tasks/{id}/remove', [TaskController::class, 'remove'])->name('tasks.remove');       
     Route::patch('/tasks/{taskId}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     Route::post('/tasks/{task}/files', [TaskController::class, 'uploadFile'])->name('tasks.uploadFile');
     Route::delete('/tasks/{task}/{attachment}/files', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
-
 });
 
 
