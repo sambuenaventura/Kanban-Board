@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBoardRequest;
 use App\Models\Board;
+use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -75,41 +76,47 @@ class BoardController extends Controller
     }
     
 
-    
-
-    
-    
-    
-
     public function show($id, Request $request, Board $board)
     {
         $board = Board::with('tasks', 'collaborators')->findOrFail($id);
-
+    
+        $this->authorize('view', $board);
+    
         $tasks = $board->getUserTasks();
         
+        // Get collaborators
         $collaborators = $board->collaborators ?? collect();
+    
+        // Fetch users who are not collaborators or the authenticated user
         $nonCollaborators = User::whereDoesntHave('boards', function ($query) use ($board) {
             $query->where('boards.id', $board->id);
-        })->where('id', '!=', auth()->id())->get() ?? collect();
-        
-
-        // Authorization check to ensure the user can view this board
-        // $this->authorize('view', $board);
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNotIn('id', $collaborators->pluck('id')) // Exclude collaborators
+            ->get();
     
-        // Retrieve the tags from the query string, or an empty array if not present
+        // Fetch pending invitations
+        $pendingInvitations = BoardInvitation::where('board_id', $board->id)
+            ->where('status', 'pending')
+            ->with('invitedUser')
+            ->get();
+    
+        // Exclude users with pending invitations from nonCollaborators
+        $invitedUserIds = $pendingInvitations->pluck('user_id');
+        $nonCollaborators = $nonCollaborators->whereNotIn('id', $invitedUserIds);
+    
+        // Filter by tags
         $tags = $request->query('tags', null);
-        
-        // Filter tasks by the selected tags, if any
+    
         if ($tags) {
-            // If tags is an array (e.g., from checkboxes), no need to explode
-            $selectedTags = array_unique(is_array($tags) ? $tags : explode(',', $tags)); // Remove duplicates
+            $selectedTags = array_unique(is_array($tags) ? $tags : explode(',', $tags));
             $tasks = $tasks->filter(function($task) use ($selectedTags) {
-                return in_array($task->tag, $selectedTags); // Assuming 'tag' is a field in the task model
+                return in_array($task->tag, $selectedTags);
             });
         } else {
             $selectedTags = [];
         }
-        // dd($tasks);
+    
         $toDoTasks = Board::getTaskByProgress($tasks, 'to_do');
         $inProgressTasks = Board::getTaskByProgress($tasks, 'in_progress');
         $doneTasks = Board::getTaskByProgress($tasks, 'done');
@@ -131,17 +138,10 @@ class BoardController extends Controller
             'selectedTags', 
             'allTags',
             'collaborators', 
-            'nonCollaborators'
+            'nonCollaborators',
+            'pendingInvitations'
         ));
     }
-    
-    
-
-
-    
-    
-    
-    
 
     public function edit($id)
     {
@@ -164,7 +164,6 @@ class BoardController extends Controller
     }
     
     
-
     public function destroy($id)
     {
         $board = Board::findOrFail($id);
