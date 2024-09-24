@@ -94,8 +94,11 @@ class TaskController extends Controller
     
     public function edit($boardId, $taskId)
     {
-        $task = Task::findOrFail($taskId); // Find task by ID
-        return view('boards.tasks.edit', compact('task', 'boardId')); // Pass the board ID as well
+        $task = Task::findOrFail($taskId);
+
+        $this->authorize('isOwnerOrCollaborator', $task);
+
+        return view('boards.tasks.edit', compact('task', 'boardId'));
     }
     
     public function update(UpdateTaskRequest $request, $boardId, $taskId)
