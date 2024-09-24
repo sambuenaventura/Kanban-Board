@@ -141,7 +141,7 @@ class TaskController extends Controller
     
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
-        // $this->authorize('owner', $task);
+        $this->authorize('isOwnerOrCollaborator', $task);
     
         $taskName = $task->name;
     
