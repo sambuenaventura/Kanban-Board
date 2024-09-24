@@ -33,28 +33,55 @@
                                 <p class="text-sm text-gray-500 bg-gray-50 rounded-lg p-4">No collaborators yet.</p>
                             @endif
                             
-                            <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3">Add New Collaborator</h4>
+                            <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3">Pending Invitations</h4>
+                            @if($pendingInvitations->isNotEmpty())
+                                <ul class="bg-gray-50 rounded-lg divide-y divide-gray-200 mb-6">
+                                    @foreach($pendingInvitations as $invitation)
+                                        <li class="px-4 py-3 flex justify-between items-center hover:bg-gray-100 transition-colors duration-200">
+                                            <span class="text-sm font-medium text-gray-900">{{ $invitation->invitedUser->name }}</span>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm text-gray-500">Pending</span>
+                                                <form action="{{ route('boards.cancelInvitation', ['board' => $invitation->board_id, 'invitation' => $invitation->id]) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors duration-200 flex items-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="text-sm text-gray-500 bg-gray-50 rounded-lg p-4 mb-6">No pending invitations.</p>
+                            @endif
+                        
+                        
+                            
+
+                            <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3">Invite New Collaborator</h4>
                             @if($nonCollaborators->isNotEmpty())
-                                <form action="{{ route('boards.addUser', $board->id) }}" method="POST" class="space-y-4 bg-gray-50 rounded-lg p-4">
+                                <form action="{{ route('boards.inviteUser', $board->id) }}" method="POST" class="space-y-4 bg-gray-50 rounded-lg p-4">
                                     @csrf
                                     <div>
-                                        <label for="user_id" class="block text-sm font-medium text-gray-700 mb-1">Select User</label>
+                                        <label for="user_id" class="block text-sm font-medium text-gray-700 mb-1">Select User to Invite</label>
                                         <select name="user_id" id="user_id" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                            <option value="" disabled selected>Choose a user to add</option>
+                                            <option value="" disabled selected>Choose a user to invite</option>
                                             @foreach($nonCollaborators as $user)
                                                 <option value="{{ $user->id }}">{{ $user->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <input type="hidden" name="role" value="collaborator">
                                     <div class="mt-4">
                                         <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm transition-colors duration-200">
-                                            Add Collaborator
+                                            Send Invitation
                                         </button>
                                     </div>
                                 </form>
                             @else
-                                <p class="text-sm text-gray-500 bg-gray-50 rounded-lg p-4">No users available to add as collaborators.</p>
+                                <p class="text-sm text-gray-500 bg-gray-50 rounded-lg p-4">No users available to invite as collaborators.</p>
                             @endif
                         </div>
                     </div>
