@@ -32,7 +32,17 @@ Route::get('/auth/redirect', function() {
 Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 Route::middleware(['auth'])->group(function () {
+    // Board user management and invitations routes
+    Route::get('/boards/invitations', [BoardUserController::class, 'manageInvitations'])->name('boards.manageInvitations');
+    Route::post('/boards/{board}/invite', [BoardUserController::class, 'inviteUserToBoard'])->name('boards.inviteUser');
+    Route::post('/boards/invitations/{invitation}/accept', [BoardUserController::class, 'acceptInvitation'])->name('boards.acceptInvitation');
+    Route::post('/boards/invitations/{invitation}/decline', [BoardUserController::class, 'declineInvitation'])->name('boards.declineInvitation');
     
+    Route::delete('/boards/{board}/invitations/{invitation}', [BoardUserController::class, 'cancelInvitation'])->name('boards.cancelInvitation');
+
+    Route::post('/boards/{board}/add-user', [BoardUserController::class, 'addUserToBoard'])->name('boards.addUser');
+    Route::delete('/boards/{board}/remove-user/{user}', [BoardUserController::class, 'removeUserFromBoard'])->name('boards.removeUser');
+
     // Board routes
     Route::get('/boards', [BoardController::class, 'index'])->name('boards.index');
     Route::get('/boards/create', [BoardController::class, 'create'])->name('boards.create');
