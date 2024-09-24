@@ -9,6 +9,41 @@ use Illuminate\Http\Request;
 
 class BoardUserController extends Controller
 {
+    use AuthorizesRequests;
+
+    // public function addUserToBoard(Request $request, $boardId)
+    // {
+
+    //     $board = Board::findOrFail($boardId);
+
+    //     // Authorize the action
+    //     $this->authorize('update', $board);
+
+    //     // Validate the request data
+    //     $request->validate([
+    //         'user_id' => 'required|exists:users,id',
+    //         'role' => 'required|string|in:collaborator', // Prevent assigning owner role here
+    //     ]);
+    
+    //     // Check if the user is already a member of the board
+    //     $existingBoardUser = BoardUser::where('board_id', $boardId)
+    //         ->where('user_id', $request->user_id)
+    //         ->first();
+
+    
+    //     if ($existingBoardUser) {
+    //         return redirect()->back()->withErrors(['user' => 'This user is already a member of the board.']);
+    //     }
+    
+    //     // Add the user to the board
+    //     BoardUser::create([
+    //         'board_id' => $boardId,
+    //         'user_id' => $request->user_id,
+    //         'role' => $request->role,
+    //     ]);
+    
+    //     return redirect()->route('boards.show', $boardId)->with('success', 'User added to the board successfully.');
+    // }
 
     public function removeUserFromBoard(Board $board, User $user)
     {
