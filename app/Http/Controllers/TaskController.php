@@ -30,6 +30,12 @@ class TaskController extends Controller
     
     public function store(StoreTaskRequest $request)
     {
+        // Retrieve the board
+        $board = Board::findOrFail($request->input('board_id'));
+
+        // Authorize the user to add tasks to the board
+        $this->authorize('view', $board);
+
         // Check if this idempotency key has already been processed
         if (Cache::has('idempotency_' . $request->idempotency_key)) {
             return redirect()->route('boards.show', $request->input('board_id'))
@@ -40,7 +46,8 @@ class TaskController extends Controller
         $boardUser = BoardUser::where('board_id', $request->input('board_id'))
                                ->where('user_id', auth()->id())
                                ->first();
-    
+
+
         if (!$boardUser) {
             return redirect()->route('boards.show', $request->input('board_id'))
                              ->withErrors(['board_user' => 'You are not authorized to add tasks to this board.']);
