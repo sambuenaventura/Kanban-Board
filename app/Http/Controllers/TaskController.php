@@ -193,6 +193,8 @@ class TaskController extends Controller
     public function updateStatus(Request $request, $taskId)
     {
         $task = Task::findOrFail($taskId);
+
+        $this->authorize('isOwnerOrCollaborator', $task);
         
         $request->validate([
             'progress' => 'required|string|in:to_do,in_progress,done',
