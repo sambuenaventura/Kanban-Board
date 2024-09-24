@@ -105,7 +105,9 @@ class TaskController extends Controller
     {
         // Find the task by ID
         $task = Task::findOrFail($taskId);
-    
+        
+        $this->authorize('isOwnerOrCollaborator', $task);
+
         // Get validated data from the request
         $validatedData = $request->validated();
     
