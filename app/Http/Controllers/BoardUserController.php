@@ -19,20 +19,44 @@ class BoardUserController extends Controller
         return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
     }
 
+    public function inviteUserToBoard(Request $request, $boardId)
     {
         // Validate the request data
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role' => 'required|string|in:collaborator', // Prevent assigning owner role here
         ]);
     
         // Check if the user is already a member of the board
-        $existingBoardUser = BoardUser::where('board_id', $boardId)
+        $isCollaborator = BoardUser::where('board_id', $boardId)
             ->where('user_id', $request->user_id)
+            ->exists();
+    
+        if ($isCollaborator) {
+            return redirect()->back()->withErrors(['user' => 'This user is already a collaborator on the board.']);
+        }
+    
+        // Check if the user already has an invitation
+        $existingInvite = BoardInvitation::where('board_id', $boardId)
+            ->where('user_id', $request->user_id)
+            ->where('status', 'pending')
             ->first();
     
-        if ($existingBoardUser) {
-            return redirect()->back()->withErrors(['user' => 'This user is already a member of the board.']);
+        if ($existingInvite) {
+            return redirect()->back()->withErrors(['user' => 'An invitation has already been sent to this user.']);
+        }
+    
+        // Send an invitation
+        BoardInvitation::create([
+            'board_id' => $boardId,
+            'user_id' => $request->user_id,
+            'invited_by' => auth()->id(),
+            'status' => 'pending',
+        ]);
+    
+        return redirect()->route('boards.show', $boardId)->with('success', 'Invitation sent successfully.');
+    }
+    
+
         }
     
         // Add the user to the board
