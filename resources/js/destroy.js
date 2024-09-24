@@ -25,7 +25,12 @@ document.addEventListener("DOMContentLoaded", () => {
             })
                 .then((response) => {
                     if (!response.ok) {
-                        throw new Error("Network response was not ok");
+                        // Handle specific status codes
+                        return response.json().then((err) => {
+                            throw new Error(
+                                `Error ${response.status}: ${err.message}`
+                            );
+                        });
                     }
                     return response.json();
                 })
@@ -53,7 +58,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById("removeTaskModal").style.display =
                         "none"; // Hide the modal
                 })
-                .catch((error) => console.error("Error:", error));
+                .catch((error) => {
+                    console.error("Error:", error);
+                    alert(error.message); // Display an alert with the error message
+                });
         });
 
     // Cancel removal
