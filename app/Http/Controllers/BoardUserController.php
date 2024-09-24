@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Board;
+use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class BoardUserController extends Controller
