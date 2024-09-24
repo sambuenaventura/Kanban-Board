@@ -37,12 +37,13 @@
                                 </svg>
                                 Add Todo
                             </button>
+                            
                             @if ($board->user_id == Auth::id())
                                 <button id="openCollaboratorModalBtn" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-500 active:bg-green-700 focus:outline-none focus:border-green-700 focus:ring focus:ring-green-300 disabled:opacity-25 transition">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                                     </svg>
-                                    Add Collaborator
+                                    Invite a Collaborator
                                 </button>
                             @endif
                         </div>
@@ -249,6 +250,12 @@
     <x-task-modal modal-type="delete-board-task" />
 
     <!-- Manage Collaborators Modal -->
-    <x-task-modal :board="$board" modal-type="manage-collaborator" :collaborators="$collaborators" :non-collaborators="$nonCollaborators" />
+    <x-task-modal 
+        :board="$board" 
+        modal-type="manage-collaborator" 
+        :collaborators="$collaborators" 
+        :non-collaborators="$nonCollaborators" 
+        :pending-invitations="$pendingInvitations" 
+    />
 
 </x-app-layout>
