@@ -159,6 +159,9 @@ class TaskController extends Controller
     {
         // Find and delete the task
         $task = Task::findOrFail($taskId);
+
+        $this->authorize('isOwnerOrCollaborator', $task);
+        
         $task->delete();
     
         // Redirect back to the board with the correct boardId
