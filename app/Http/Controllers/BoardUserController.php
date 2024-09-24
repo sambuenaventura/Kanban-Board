@@ -100,6 +100,21 @@ class BoardUserController extends Controller
         return view('boards.manage-invitations', compact('pendingInvitations'));
     }
     
+    public function cancelInvitation(Board $board, BoardInvitation $invitation)
+    {
+        // Authorize the action, checking if the authenticated user is the inviter
+        // $this->authorize('cancel', $invitation);
+
+        // Check if the invitation belongs to the correct board
+        if ($invitation->board_id !== $board->id) {
+            return redirect()->route('boards.show', $board->id)->withErrors('Invitation not found for this board.');
+        }
+
+        // Delete the invitation
+        $invitation->delete();
+
+        // Redirect back with a success message
+        return redirect()->route('boards.show', $board->id)->with('success', 'Invitation canceled successfully.');
     }
 
 
