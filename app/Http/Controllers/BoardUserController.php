@@ -57,16 +57,26 @@ class BoardUserController extends Controller
     }
     
 
+    public function acceptInvitation(BoardInvitation $invitation)
+    {
+        // Ensure the authenticated user is the invitee
+        if ($invitation->user_id !== auth()->id()) {
+            return redirect()->route('boards.show', $invitation->board_id)->withErrors('Unauthorized action.');
         }
     
         // Add the user to the board
         BoardUser::create([
-            'board_id' => $boardId,
-            'user_id' => $request->user_id,
-            'role' => $request->role,
+            'board_id' => $invitation->board_id,
+            'user_id' => $invitation->user_id,
+            'role' => 'collaborator',
         ]);
     
-        return redirect()->route('boards.show', $boardId)->with('success', 'User added to the board successfully.');
+        // Update invitation status
+        $invitation->update(['status' => 'accepted']);
+    
+        return redirect()->route('boards.show', $invitation->board_id)->with('success', 'You have joined the board.');
+    }
+    
     }
     public function removeUserFromBoard(Board $board, User $user)
     {
