@@ -77,8 +77,19 @@ class BoardUserController extends Controller
         return redirect()->route('boards.show', $invitation->board_id)->with('success', 'You have joined the board.');
     }
     
+    public function declineInvitation(BoardInvitation $invitation)
+    {
+        // Ensure the authenticated user is the invitee
+        if ($invitation->user_id !== auth()->id()) {
+            return redirect()->route('boards.show', $invitation->board_id)->withErrors('Unauthorized action.');
+        }
+    
+        // Update invitation status to declined
+        $invitation->update(['status' => 'declined']);
+    
+        return redirect()->route('dashboard')->with('success', 'You declined the invitation.');
     }
-    public function removeUserFromBoard(Board $board, User $user)
+    
     {
         $board->users()->detach($user->id);
         return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
