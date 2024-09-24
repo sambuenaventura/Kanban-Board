@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
             })
             .catch((error) => {
                 console.error("Error:", error);
-                alert("Failed to update task. Please try again.");
+                alert("Error 403: This action is unauthorized.");
             });
     }
 
