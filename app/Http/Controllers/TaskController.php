@@ -9,6 +9,8 @@ use App\Http\Requests\UploadFileRequest;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -173,21 +175,27 @@ class TaskController extends Controller
 
 // In app/Http/Controllers/TaskController.php
 
-    public function remove($id)
-    {
-        try {
-            $task = Task::findOrFail($id);
+        public function remove($id)
+        {
+            try {
+                $task = Task::findOrFail($id);
 
-            // Directly delete the task without authorization check
-            $task->delete();
-            return response()->json(['message' => 'Task removed successfully.']);
-            
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Task not found.'], 404);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
+                // Check authorization before deleting the task
+                $this->authorize('isOwnerOrCollaborator', $task);
+
+                // Directly delete the task
+                $task->delete();
+                return response()->json(['message' => 'Task removed successfully.']);
+                
+            } catch (ModelNotFoundException $e) {
+                return response()->json(['message' => 'Task not found.'], 404);
+            } catch (AuthorizationException $e) {
+                // Return a JSON response with 403 status code
+                return response()->json(['message' => 'This action is unauthorized.'], 403);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
         }
-    }
 
 
     public function updateStatus(Request $request, $taskId)
