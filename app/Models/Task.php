@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -77,7 +78,7 @@ class Task extends Model implements HasMedia
         return $tasks->where('progress', $progress)
                         ->groupBy(function($task) 
                         {
-                            return \Carbon\Carbon::parse($task->due)->format('Y-m-d');
+                            return Carbon::parse($task->due)->format('Y-m-d');
                         })->sortKeys();
     }
 
@@ -97,25 +98,40 @@ class Task extends Model implements HasMedia
         }
     }
     
-    public static function getDues($tasks)
+    public function scopeNotDone($query)
     {
-        $today = (new DateTime())->format('Y-m-d');
-        $yesterday = (new DateTime())->modify('-1 day')->format('Y-m-d');
-        $tomorrow = (new DateTime())->modify('+1 day')->format('Y-m-d');
-    
-        foreach ($tasks as $task) {
-            if ($task->due === $today) {
-                $task->due_day = 'Due Today';
-            } elseif ($task->due === $yesterday) {
-                $task->due_day = 'Due Yesterday';
-            } elseif ($task->due === $tomorrow) {
-                $task->due_day = 'Due Tomorrow';
-            } else {
-                $task->due_day = '';
-            }
-        }
-    
-        return $tasks;
+        return $query->where('progress', '!=', 'done');
     }
+
+    public function scopeOverdue($query)
+    {
+        return $query->notDone()->where('due', '<', Carbon::today());
+    }
+
+    public function scopeDueToday($query)
+    {
+        return $query->notDone()->whereDate('due', Carbon::today());
+    }
+
+    public function scopeDueSoon($query)
+    {
+        $tomorrow = Carbon::tomorrow();
+        $threeDaysFromNow = Carbon::today()->addDays(3);
+        return $query->notDone()->whereBetween('due', [$tomorrow, $threeDaysFromNow]);
+    }
+
+    public static function getTaskCounts($boardId)
+    {
+        return [
+            'overdue' => self::where('board_id', $boardId)->overdue()->count(),
+            'dueToday' => self::where('board_id', $boardId)->dueToday()->count(),
+            'dueSoon' => self::where('board_id', $boardId)->dueSoon()->count(),
+        ];
+    }
+    
+    
+    
+    
+    
     
 }
