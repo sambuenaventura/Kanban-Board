@@ -164,11 +164,22 @@ class BoardController extends Controller
     }
     
     
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $board = Board::findOrFail($id);
+        $board = Board::find($id); // Use find instead of findOrFail
+
+        // Consolidated check for board existence or idempotency key
+        if (!$board || Cache::has('idempotency_' . $request->idempotency_key)) {
+            return redirect()->route('boards.index')->with('warning', 'The board has already been deleted.');
+        }
+        
         $this->authorize('delete', $board);
+    
         $board->delete();
+        Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
+        
         return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
     }
+    
+    
 }
