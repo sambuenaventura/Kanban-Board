@@ -6,6 +6,7 @@ use App\Http\Requests\StoreBoardRequest;
 use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -19,36 +20,31 @@ class BoardController extends Controller
     public function index()
     {
         $userId = Auth::id();
-        
-        // Get boards where the user is either the owner or a collaborator
-        $boards = Board::with(['user', 'collaborators']) // Eager load user and collaborators
-                        ->withCount(['tasks', 'boardUsers'])
-                        ->where(function ($query) use ($userId) {
-                            $query->where('user_id', $userId) // The user is the owner $query->where('column_name', 'value'):
-                                        ->orWhereHas('collaborators', function ($subQuery) use ($userId) { // ->orWhereHas('relationshipName', function ($subQuery) use ($variable) {. The ->orWhereHas('collaborators', function ($subQuery) use ($userId) line accesses the board_users table through the collaborators relationship defined in the Board model.
-                                        $subQuery->where('users.id', $userId); // The user is a collaborator
-                                    });
-                        })
-                        ->get();
+       
+        $boardsOwned = Board::with(['user', 'tasks'])
+            ->withCount(['tasks', 'boardUsers'])
+            ->where('user_id', $userId)
+            ->get();
 
-        $boardsOwned = Board::with(['user'])
-                            ->withCount(['tasks', 'boardUsers'])
-                            ->where(function ($query) use ($userId) {
-                                $query->where('user_id', $userId);
-                            })
-                            ->get();
+        $boardsCollaborated = Board::with(['user', 'tasks', 'collaborators'])
+            ->withCount(['tasks', 'boardUsers'])
+            ->whereHas('collaborators', function ($query) use ($userId) {
+                $query->where('users.id', $userId);
+            })
+            ->get();
 
-        $boardsCollaborated = Board::with(['collaborators'])
-                            ->withCount(['tasks', 'boardUsers'])
-                            ->orWhereHas('collaborators', function ($subQuery) use ($userId) {
-                                $subQuery->where('users.id', $userId); 
-                            })
-                            ->get();
+        // Add task counts to each board
+        $boardsOwned->each(function ($board) {
+            $board->taskCounts = Task::getTaskCounts($board->id);
+        });
 
-                            
-    
-        return view('boards.index', compact('boards', 'userId', 'boardsOwned', 'boardsCollaborated'));
+        $boardsCollaborated->each(function ($board) {
+            $board->taskCounts = Task::getTaskCounts($board->id);
+        });
+
+        return view('boards.index', compact('boardsOwned', 'boardsCollaborated', 'userId'));
     }
+    
 
     public function create()
     {
