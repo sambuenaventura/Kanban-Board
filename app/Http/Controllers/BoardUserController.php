@@ -8,6 +8,7 @@ use App\Models\BoardUser;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class BoardUserController extends Controller
 {
@@ -68,7 +69,11 @@ class BoardUserController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
         ]);
-    
+
+        if (Cache::has('idempotency_' . $request->idempotency_key)) {
+            return redirect()->route('boards.show', $boardId)->with('warning', 'An invitation has already been sent to this user.');
+        }
+        
         // Check if the user is already a member of the board
         $isCollaborator = BoardUser::where('board_id', $boardId)
             ->where('user_id', $request->user_id)
@@ -85,7 +90,8 @@ class BoardUserController extends Controller
             ->first();
     
         if ($existingInvite) {
-            return redirect()->back()->withErrors(['user' => 'An invitation has already been sent to this user.']);
+            // return redirect()->back()->withErrors(['user' => 'An invitation has already been sent to this user.']);
+            return redirect()->back()->with('warning', 'An invitation has already been sent to this user.');
         }
     
         // Send an invitation
@@ -95,6 +101,8 @@ class BoardUserController extends Controller
             'invited_by' => auth()->id(),
             'status' => 'pending',
         ]);
+
+        Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
     
         return redirect()->route('boards.show', $boardId)->with('success', 'Invitation sent successfully.');
     }
