@@ -47,12 +47,18 @@ class BoardUserController extends Controller
     //     return redirect()->route('boards.show', $boardId)->with('success', 'User added to the board successfully.');
     // }
 
-    public function removeUserFromBoard(Board $board, User $user)
+    public function removeUserFromBoard(Request $request, Board $board, User $user)
     {
+        if (Cache::has('idempotency_' . $request->idempotency_key)) {
+            return redirect()->route('boards.show', $board->id)->with('warning', 'User has already been removed from this board.');
+        }
 
         $this->authorize('delete', $board);
 
         $board->users()->detach($user->id);
+
+        Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
+
         return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
     }
 
