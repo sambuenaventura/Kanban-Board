@@ -41,7 +41,7 @@ class TaskController extends Controller
         // Check if this idempotency key has already been processed
         if (Cache::has('idempotency_' . $request->idempotency_key)) {
             return redirect()->route('boards.show', $request->input('board_id'))
-                             ->with('info', 'Task has already been created.');
+                             ->with('warning', 'Task has already been created.');
         }
     
         // Retrieve the board_user_id associated with the authenticated user and the board
