@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BoardRemoveCollaborator;
 use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
@@ -58,6 +59,8 @@ class BoardUserController extends Controller
 
         $board->users()->detach($user->id);
 
+        broadcast(new BoardRemoveCollaborator($user->id, $board->id));  
+        
         Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
 
         return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
