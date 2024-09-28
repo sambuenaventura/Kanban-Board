@@ -185,6 +185,21 @@ class BoardUserController extends Controller
             return redirect()->route('boards.show', $board->id)->withErrors('Invitation not found for this board.');
         }
 
+        $userId = $invitation->user_id;
+
+        // Check if the user has already joined the board
+        $isMember = $board->users()->where('users.id', $userId)->exists();
+
+        if ($isMember) {
+            // User has already joined the board, so do not cancel the invitation
+            return redirect()->route('boards.show', $board->id)->with('warning', 'User has already joined the board. Invitation cannot be canceled.');
+        }
+
+        // Check if the invitation has been declined
+        if ($invitation->status === 'declined') {
+            return redirect()->route('boards.show', $board->id)->with('warning', 'User has already declined the invitation. Invitation cannot be canceled.');
+        }
+
         // Delete the invitation
         $invitation->delete();
 
