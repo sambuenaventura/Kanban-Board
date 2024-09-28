@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BoardTaskCreated;
+use App\Events\BoardTaskDeleted;
+use App\Events\BoardTaskUpdated;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Requests\UpdateTaskStatusRequest;
@@ -66,6 +69,8 @@ class TaskController extends Controller
             'board_id' => $request->input('board_id'),
             'board_user_id' => $boardUser->id,
         ]);
+
+        broadcast(new BoardTaskCreated($task));
     
         // Store the idempotency key in the cache to prevent duplicate processing
         Cache::put('idempotency_' . $request->idempotency_key, true, 86400); // Store for 24 hours
@@ -171,31 +176,35 @@ class TaskController extends Controller
     }
     
     
+    // js/destroy.js (Deleting a task from a board using the dropdown.)
+    public function remove($id)
+    {
+        try {
+            $task = Task::findOrFail($id);
 
+            // Check authorization before deleting the task
+            $this->authorize('isOwnerOrCollaborator', $task);
 
-// In app/Http/Controllers/TaskController.php
+            // Get the board ID before deleting the task
+            $boardId = $task->board_id;
 
-        public function remove($id)
-        {
-            try {
-                $task = Task::findOrFail($id);
+            // Directly delete the task
+            $task->delete();
 
-                // Check authorization before deleting the task
-                $this->authorize('isOwnerOrCollaborator', $task);
+            // Dispatch the TaskDeleted event
+            broadcast(new BoardTaskDeleted($task->id, $boardId));
 
-                // Directly delete the task
-                $task->delete();
-                return response()->json(['message' => 'Task removed successfully.']);
-                
-            } catch (ModelNotFoundException $e) {
-                return response()->json(['message' => 'Task not found.'], 404);
-            } catch (AuthorizationException $e) {
-                // Return a JSON response with 403 status code
-                return response()->json(['message' => 'This action is unauthorized.'], 403);
-            } catch (\Exception $e) {
-                return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
-            }
+            return response()->json(['message' => 'Task removed successfully.']);
+            
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Task not found.'], 404);
+        } catch (AuthorizationException $e) {
+            // Return a JSON response with 403 status code
+            return response()->json(['message' => 'This action is unauthorized.'], 403);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
+    }
 
 
     public function updateStatus(Request $request, $taskId)
@@ -210,7 +219,9 @@ class TaskController extends Controller
         
         $task->progress = $request->input('progress');
         $task->save();
-        
+
+        broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
+
         return response()->json(['success' => true, 'message' => 'Task status updated']);
     }
 

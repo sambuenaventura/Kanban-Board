@@ -24,7 +24,12 @@
                         </button>
                         <div class="">
 
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2 sm:mb-0">{{ $board->name }}</h1>
+                            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                                {{ $board->name }}
+                                <span id="update-indicator" class="inline-flex items-center px-2 py-0.5 ml-2 text-xs font-medium text-indigo-800 bg-indigo-100 rounded-full opacity-0 transition-opacity duration-300">
+                                    Updated
+                                </span>
+                            </h1>                            
                             {{-- <h5 class="text-sm font-bold text-gray-600 ml-1">
                                 Due Today:
                                 {{ $getDues }}
@@ -242,6 +247,11 @@
             </div>
         </div>
     </div>
+
+    <!-- JavaScript files with Vite -->
+    @vite([
+        'resources/views/boards/scripts/boards.show.js',
+    ])
     
     {{-- Add Task Modal --}}
     <x-task-modal :board="$board" modal-type="create" />
@@ -259,3 +269,8 @@
     />
 
 </x-app-layout>
+
+<script type="module">
+    // Global variable for boardId
+    window.boardId = {{ $board->id }};
+</script>
