@@ -28,9 +28,9 @@
     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         @forelse ($boardsOwned as $board)
-                            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-1 duration-300 ease-in-out border border-gray-200">
+                            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-1 duration-300 ease-in-out border border-gray-200 flex flex-col h-full">
                                 <div class="bg-indigo-600 h-1"></div>
-                                <div class="p-6">
+                                <div class="p-6 flex-grow flex flex-col">
                                     <div class="flex items-center justify-between mb-4">
                                         <h3 class="text-lg font-bold text-gray-900 truncate">{{ $board->name }}</h3>
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $board->user->id == $userId ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
@@ -50,9 +50,7 @@
                                         </span>
                                     </div>
                     
-                                    {{-- Task Due Dates Column --}}
-                                    {{-- Task Due Dates Column --}}
-                                    <div class="flex flex-col space-y-2">
+                                    <div class="flex flex-col space-y-2 flex-grow">
                                         @if($board->taskCounts['overdue'] > 0 || $board->taskCounts['dueToday'] > 0 || $board->taskCounts['dueSoon'] > 0)
                                             @if($board->taskCounts['overdue'] > 0)
                                                 <span class="inline-flex items-center px-2 py-1 rounded-lg bg-red-100 text-red-800 text-xs">
@@ -80,7 +78,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t border-gray-200">
+                                <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t border-gray-200 mt-auto">
                                     <a href="{{ route('boards.show', $board->id) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">View Board</a>
                                     <div class="flex space-x-3">
                                         <button class="text-gray-600 hover:text-gray-800 edit-board-btn" data-board-id="{{ $board->id }}" data-board-name="{{ $board->name }}" data-board-description="{{ $board->description }}">
@@ -98,14 +96,11 @@
                             </div>
                         @endforelse
                     </div>
-                    
-
-                    
                 </div>
             </div>
         </div>
-    </div> 
-
+    </div>
+    
     {{-- Board as a Collaborator --}}
     <div class="flex flex-col pb-6">
         <div class="flex-grow overflow-hidden sm:px-6 lg:px-8">
@@ -126,9 +121,9 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="board-container">                        
                         @forelse ($boardsCollaborated as $board)
                         
-                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-1 duration-300 ease-in-out border border-gray-200" data-board-id="{{ $board->id }}">                                
+                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition transform hover:-translate-y-1 duration-300 ease-in-out border border-gray-200 flex flex-col h-full" data-board-id="{{ $board->id }}">
                             <div class="bg-indigo-900 h-1"></div>
-                            <div class="p-6">
+                            <div class="p-6 flex-grow flex flex-col">
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="text-lg font-bold text-gray-900 truncate">{{ $board->name }}</h3>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $board->user->id == $userId ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
@@ -147,10 +142,8 @@
                                         Created {{ $board->created_at->format('M d, Y') }}
                                     </span>
                                 </div>
-                
-                                {{-- Task Due Dates Column --}}
-                                {{-- Task Due Dates Column --}}
-                                <div class="flex flex-col space-y-2">
+                        
+                                <div class="flex flex-col space-y-2 flex-grow">
                                     @if($board->taskCounts['overdue'] > 0 || $board->taskCounts['dueToday'] > 0 || $board->taskCounts['dueSoon'] > 0)
                                         @if($board->taskCounts['overdue'] > 0)
                                             <span class="inline-flex items-center px-2 py-1 rounded-lg bg-red-100 text-red-800 text-xs">
@@ -178,7 +171,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t border-gray-200">
+                            <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t border-gray-200 mt-auto">
                                 <a href="{{ route('boards.show', $board->id) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">View Board</a>
                                 <div class="flex space-x-3">
                                     <button class="text-gray-600 hover:text-gray-800 edit-board-btn" data-board-id="{{ $board->id }}" data-board-name="{{ $board->name }}" data-board-description="{{ $board->description }}">

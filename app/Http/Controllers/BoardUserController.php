@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Events\BoardInvitationCount;
+use App\Events\BoardInvitationDetailsSent;
+use App\Events\BoardInvitationDetailsCanceled;
 use App\Events\BoardRemoveCollaborator;
 use App\Models\Board;
 use App\Models\BoardInvitation;
@@ -113,6 +115,20 @@ class BoardUserController extends Controller
         // Broadcast the updated invitation count
         broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
 
+        // Prepare the invitation details for broadcasting
+        $invitationDetails = [
+            'id' => $invitation->id,
+            'board' => [
+                'name' => $invitation->board->name,
+            ],
+            'inviter' => [
+                'name' => auth()->user()->name,
+            ],
+            'created_at' => $invitation->created_at
+        ];
+
+        broadcast(new BoardInvitationDetailsSent($request->user_id, $invitationDetails));
+
         Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
     
         return redirect()->route('boards.show', $boardId)->with('success', 'Invitation sent successfully.');
@@ -208,7 +224,10 @@ class BoardUserController extends Controller
 
         // Broadcast the updated invitation count
         broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-                
+
+        // Broadcast the canceled invitation details
+        broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
+       
         // Redirect back with a success message
         return redirect()->route('boards.show', $board->id)->with('success', 'Invitation canceled successfully.');
     }
