@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BoardCreated;
 use App\Http\Requests\StoreBoardRequest;
 use App\Models\Board;
 use App\Models\BoardInvitation;
@@ -66,7 +67,10 @@ class BoardController extends Controller
             'user_id' => auth()->id(),
             'role' => 'owner',
         ]);
-    
+
+        // Dispatch boardcreated event
+        broadcast(new BoardCreated($board));
+            
         // Redirect to boards index or other relevant route
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
