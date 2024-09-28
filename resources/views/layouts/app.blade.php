@@ -122,6 +122,10 @@
             <main>
                 {{ $slot }}
             </main>
+
+            <script type="module">
+                window.currentUserId = {{ auth()->id() }};
+            </script>
         </div>
     </body>
 </html>
