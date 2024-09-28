@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BoardInvitationCount;
 use App\Events\BoardRemoveCollaborator;
 use App\Models\Board;
 use App\Models\BoardInvitation;
@@ -9,6 +10,7 @@ use App\Models\BoardUser;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class BoardUserController extends Controller
@@ -98,12 +100,18 @@ class BoardUserController extends Controller
         }
     
         // Send an invitation
-        BoardInvitation::create([
+        $invitation = BoardInvitation::create([
             'board_id' => $boardId,
             'user_id' => $request->user_id,
             'invited_by' => auth()->id(),
             'status' => 'pending',
         ]);
+
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+        
+        // Broadcast the updated invitation count
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
 
         Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
     
@@ -127,6 +135,13 @@ class BoardUserController extends Controller
     
         // Update invitation status
         $invitation->update(['status' => 'accepted']);
+
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+
+        // Broadcast the updated invitation count
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+        
     
         return redirect()->route('boards.show', $invitation->board_id)->with('success', 'You have joined the board.');
     }
@@ -140,7 +155,13 @@ class BoardUserController extends Controller
     
         // Update invitation status to declined
         $invitation->update(['status' => 'declined']);
-    
+
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+
+        // Broadcast the updated invitation count
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+                
         return redirect()->route('dashboard')->with('success', 'You declined the invitation.');
     }
     
@@ -167,6 +188,12 @@ class BoardUserController extends Controller
         // Delete the invitation
         $invitation->delete();
 
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+
+        // Broadcast the updated invitation count
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+                
         // Redirect back with a success message
         return redirect()->route('boards.show', $board->id)->with('success', 'Invitation canceled successfully.');
     }

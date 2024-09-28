@@ -29,6 +29,7 @@
                 'resources/js/delete-task-modal.js',
                 'resources/js/add-collaborator-modal',
                 'resources/js/delete-attachment-modal.js',
+                'resources/views/layouts/scripts/navigation.js',
                 ])
 
     </head>
@@ -123,9 +124,12 @@
                 {{ $slot }}
             </main>
 
+            
             <script type="module">
                 window.currentUserId = {{ auth()->id() }};
             </script>
+
+
         </div>
     </body>
 </html>
