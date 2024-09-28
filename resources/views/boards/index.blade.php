@@ -51,34 +51,33 @@
                                     </div>
                     
                                     {{-- Task Due Dates Column --}}
-{{-- Task Due Dates Column --}}
-<div class="flex flex-col space-y-2">
-    @if($board->taskCounts['overdue'] > 0 || $board->taskCounts['dueToday'] > 0 || $board->taskCounts['dueSoon'] > 0)
-        @if($board->taskCounts['overdue'] > 0)
-            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-red-100 text-red-800 text-xs">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
-                Overdue: {{ $board->taskCounts['overdue'] }}
-            </span>
-        @endif
-        @if($board->taskCounts['dueToday'] > 0)
-            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-yellow-100 text-yellow-800 text-xs">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
-                Due Today: {{ $board->taskCounts['dueToday'] }}
-            </span>
-        @endif
-        @if($board->taskCounts['dueSoon'] > 0)
-            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-orange-100 text-orange-800 text-xs">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
-                Due Soon: {{ $board->taskCounts['dueSoon'] }}
-            </span>
-        @endif
-    @else
-        <span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-100 text-green-800 text-xs">
-            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-            All tasks completed or not due soon
-        </span>
-    @endif
-</div>
+                                    <div class="flex flex-col space-y-2">
+                                        @if($board->taskCounts['overdue'] > 0 || $board->taskCounts['dueToday'] > 0 || $board->taskCounts['dueSoon'] > 0)
+                                            @if($board->taskCounts['overdue'] > 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-red-100 text-red-800 text-xs">
+                                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                    Overdue: {{ $board->taskCounts['overdue'] }}
+                                                </span>
+                                            @endif
+                                            @if($board->taskCounts['dueToday'] > 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-yellow-100 text-yellow-800 text-xs">
+                                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                    Due Today: {{ $board->taskCounts['dueToday'] }}
+                                                </span>
+                                            @endif
+                                            @if($board->taskCounts['dueSoon'] > 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-orange-100 text-orange-800 text-xs">
+                                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                    Due Soon: {{ $board->taskCounts['dueSoon'] }}
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-100 text-green-800 text-xs">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                                All tasks completed or not due soon
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t border-gray-200">
                                     <a href="{{ route('boards.show', $board->id) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">View Board</a>
@@ -148,34 +147,33 @@
                                     </div>
                     
                                     {{-- Task Due Dates Column --}}
-{{-- Task Due Dates Column --}}
-<div class="flex flex-col space-y-2">
-    @if($board->taskCounts['overdue'] > 0 || $board->taskCounts['dueToday'] > 0 || $board->taskCounts['dueSoon'] > 0)
-        @if($board->taskCounts['overdue'] > 0)
-            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-red-100 text-red-800 text-xs">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
-                Overdue: {{ $board->taskCounts['overdue'] }}
-            </span>
-        @endif
-        @if($board->taskCounts['dueToday'] > 0)
-            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-yellow-100 text-yellow-800 text-xs">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
-                Due Today: {{ $board->taskCounts['dueToday'] }}
-            </span>
-        @endif
-        @if($board->taskCounts['dueSoon'] > 0)
-            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-orange-100 text-orange-800 text-xs">
-                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
-                Due Soon: {{ $board->taskCounts['dueSoon'] }}
-            </span>
-        @endif
-    @else
-        <span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-100 text-green-800 text-xs">
-            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-            All tasks completed or not due soon
-        </span>
-    @endif
-</div>
+                                    <div class="flex flex-col space-y-2">
+                                        @if($board->taskCounts['overdue'] > 0 || $board->taskCounts['dueToday'] > 0 || $board->taskCounts['dueSoon'] > 0)
+                                            @if($board->taskCounts['overdue'] > 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-red-100 text-red-800 text-xs">
+                                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                    Overdue: {{ $board->taskCounts['overdue'] }}
+                                                </span>
+                                            @endif
+                                            @if($board->taskCounts['dueToday'] > 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-yellow-100 text-yellow-800 text-xs">
+                                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                    Due Today: {{ $board->taskCounts['dueToday'] }}
+                                                </span>
+                                            @endif
+                                            @if($board->taskCounts['dueSoon'] > 0)
+                                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-orange-100 text-orange-800 text-xs">
+                                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+                                                    Due Soon: {{ $board->taskCounts['dueSoon'] }}
+                                                </span>
+                                            @endif
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-100 text-green-800 text-xs">
+                                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                                                All tasks completed or not due soon
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <div class="bg-gray-50 px-6 py-3 flex justify-between items-center border-t border-gray-200">
                                     <a href="{{ route('boards.show', $board->id) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">View Board</a>
@@ -202,6 +200,11 @@
             </div>
         </div>
     </div>  
+
+    <!-- JavaScript files with Vite -->
+    @vite([
+        'resources/views/boards/scripts/boards.index.js',
+    ])
 
     <!-- Create Board Modal -->
     <x-board-modal modal-type="create" />
