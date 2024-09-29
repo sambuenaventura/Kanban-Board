@@ -46,9 +46,9 @@ class Board extends Model
     }
 
 
-    public static function getAllTags()
+    public function getAllTags()
     {
-        return Task::distinct()->pluck('tag');
+        return $this->tasks()->distinct()->pluck('tag')->filter();
     }
     
     public function getUserTasks()

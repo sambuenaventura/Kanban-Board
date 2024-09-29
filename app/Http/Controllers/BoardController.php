@@ -125,8 +125,8 @@ class BoardController extends Controller
         $countInProgress = $inProgressTasks->flatten()->count();
         $countDone = $doneTasks->flatten()->count();
     
-        $allTags = Board::getAllTags();
-    
+        $allTags = $board->getAllTags();
+
         return view('boards.show', compact(
             'board', 
             'toDoTasks', 
