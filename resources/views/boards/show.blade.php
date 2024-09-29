@@ -251,6 +251,13 @@
     <!-- JavaScript files with Vite -->
     @vite([
         'resources/views/boards/scripts/boards.show.js',
+        'resources/views/boards/scripts/boards.add-task-modal.js',
+        'resources/views/boards/scripts/boards.add-collaborator-modal.js',
+        'resources/views/boards/scripts/boards.drag-drop.js',
+        'resources/views/boards/scripts/boards.delete-dropdown.js',
+        'resources/views/boards/scripts/boards.fetch-delete-task.js',
+        'resources/views/boards/scripts/boards.tag-filter.js',
+
     ])
     
     {{-- Add Task Modal --}}

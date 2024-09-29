@@ -201,6 +201,9 @@
     <!-- JavaScript files with Vite -->
     @vite([
         'resources/views/boards/scripts/boards.index.js',
+        'resources/views/boards/scripts/boards.add-board-modal.js',
+        'resources/views/boards/scripts/boards.edit-board-modal.js',
+        'resources/views/boards/scripts/boards.delete-board-modal.js',
     ])
 
     <!-- Create Board Modal -->

@@ -153,10 +153,16 @@
         </div>
     </div>
 
+    <!-- JavaScript files with Vite -->
+    @vite([
+        'resources/views/boards/scripts/tasks.attachment-modal.js',
+        'resources/views/boards/scripts/tasks.delete-attachment-modal.js',
+        'resources/views/boards/scripts/tasks.delete-task-modal.js',
+    ])
+    
     {{-- Modal for deleting task --}}
     <x-task-modal modal-type="delete-task" />
 
-    
     {{-- Modal for deleting attachment --}}
     <x-task-modal modal-type="delete-attachment" />
     
