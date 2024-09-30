@@ -15,6 +15,14 @@ class TaskService
         $this->taskModel = $taskModel;
     }
 
+    public function getAllTags($board)
+    {
+        return $this->taskModel->where('board_id', $board->id)
+                               ->distinct()             
+                               ->pluck('tag')            
+                               ->filter();            
+    }
+    
 
 
 }
