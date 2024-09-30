@@ -195,4 +195,24 @@ class BoardControllerTest extends TestCase
         $this->assertEquals('The name is required.', session('errors')->get('name')[0]);
     }
 
+    public function test_store_fails_when_name_exceeds_max_length()
+    {
+        // Arrange: Create a user and act as that user
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Define the board data with a name exceeding the maximum length
+        $data = [
+            'name' => str_repeat('A', 256), // 256 characters
+            'description' => 'This is a test board with a very long name.',
+        ];
+
+        // Act: Make a POST request to the store method
+        $response = $this->withoutMiddleware()->post(route('boards.store'), $data);
+
+        // Assert: Check for validation errors
+        $response->assertSessionHasErrors(['name']);
+        $this->assertEquals('The name field must not be greater than 255 characters.', session('errors')->get('name')[0]);
+    }
+
 }
