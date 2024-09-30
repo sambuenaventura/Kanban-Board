@@ -49,29 +49,19 @@ class BoardController extends Controller
         return view('boards.create');
     }
 
+
     public function store(StoreBoardRequest $request)
     {
         // Create a new board with the validated data
-        $board = Board::create([
-            'name' => $request->validated()['name'],  // 'validated()' ensures only valid data is used
-            'description' => $request->validated()['description'] ?? null, // Handle nullable description
-            'user_id' => auth()->id(),
-        ]);
+        $board = $this->boardService->createBoard($request->validated());
     
-        // Add the creator to the board_users table as the owner
-        BoardUser::create([
-            'board_id' => $board->id,
-            'user_id' => auth()->id(),
-            'role' => 'owner',
-        ]);
-
         // Dispatch boardcreated event
         broadcast(new BoardCreated($board));
             
         // Redirect to boards index or other relevant route
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
-    
+
 
     public function show($id, Request $request, Board $board)
     {
