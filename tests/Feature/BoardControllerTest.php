@@ -287,4 +287,19 @@ class BoardControllerTest extends TestCase
         $response->assertViewHas('board', $board); // Check that the board is passed to the view
     }
     
+    public function test_show_denies_access_to_unauthorized_user()
+    {
+        // Arrange: Create two users and a board owned by the first user
+        $owner = User::factory()->create();
+        $unauthorizedUser = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $owner->id]); // Create a board for the owner
+        $this->actingAs($unauthorizedUser); // Act as the unauthorized user
+    
+        // Act: Attempt to access the board
+        $response = $this->get(route('boards.show', $board->id));
+    
+        // Assert: Check that the response has a 403 status code
+        $response->assertStatus(403); // Unauthorized access should return a 403 status
+    }
+    
 }
