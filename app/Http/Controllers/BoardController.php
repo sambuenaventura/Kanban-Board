@@ -33,27 +33,12 @@ class BoardController extends Controller
     public function index()
     {
         $userId = Auth::id();
-       
-        $boardsOwned = Board::with(['user', 'tasks'])
-            ->withCount(['tasks', 'boardUsers'])
-            ->where('user_id', $userId)
-            ->get();
-
-        $boardsCollaborated = Board::with(['user', 'tasks', 'collaborators'])
-            ->withCount(['tasks', 'boardUsers'])
-            ->whereHas('collaborators', function ($query) use ($userId) {
-                $query->where('users.id', $userId);
-            })
-            ->get();
+        $boardsOwned = $this->boardService->getOwnedBoards($userId);
+        $boardsCollaborated = $this->boardService->getCollaboratedBoards($userId);
 
         // Add task counts to each board
-        $boardsOwned->each(function ($board) {
-            $board->taskCounts = Task::getTaskCounts($board->id);
-        });
-
-        $boardsCollaborated->each(function ($board) {
-            $board->taskCounts = Task::getTaskCounts($board->id);
-        });
+        $this->boardService->addTaskCountsToBoards($boardsOwned);
+        $this->boardService->addTaskCountsToBoards($boardsCollaborated);
 
         return view('boards.index', compact('boardsOwned', 'boardsCollaborated', 'userId'));
     }
