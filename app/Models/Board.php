@@ -45,35 +45,6 @@ class Board extends Model
         return $this->hasMany(BoardUser::class);
     }
 
-
-    public function getAllTags()
-    {
-        return $this->tasks()->distinct()->pluck('tag')->filter();
-    }
-    
-    public function getUserTasks()
-    {
-        // Retrieve tasks only if the board is owned by the current user
-        if ($this->user_id === Auth::id()) {
-            return $this->tasks;
-        }
-
-        // If the user is a collaborator, return tasks
-        if ($this->collaborators->contains(Auth::id())) {
-            return $this->tasks;
-        }
-
-        return collect();
-    }
-
-    public static function getTaskByProgress($tasks, $progress)
-    {
-        return $tasks->where('progress', $progress)
-                     ->groupBy(function($task) {
-                         return Carbon::parse($task->due)->format('Y-m-d');
-                     })->sortKeys();
-    }
-
     public static function getDues($tasks)
     {
         $today = (new DateTime())->format('Y-m-d');
