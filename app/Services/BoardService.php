@@ -52,5 +52,22 @@ class BoardService
         });
     }
 
+    public function createBoard(array $data)
+    {
+        $board = $this->boardModel->create([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'user_id' => Auth::id(),
+        ]);
+        // Add the creator to the board_users table as the owner
+        $this->boardUserModel->create([
+            'board_id' => $board->id,
+            'user_id' => Auth::id(),
+            'role' => 'owner',
+        ]);
+        
+        return $board;
+    }
+
 
 }
