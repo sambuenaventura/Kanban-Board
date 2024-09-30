@@ -44,6 +44,14 @@ class TaskService
                      })->sortKeys();
     }
 
+    public function getTaskCounts($tasks)
+    {
+        return [
+            'toDo' => $tasks->where('progress', 'to_do')->count(),
+            'inProgress' => $tasks->where('progress', 'in_progress')->count(),
+            'done' => $tasks->where('progress', 'done')->count(),
+        ];
+    }
 
 
 }
