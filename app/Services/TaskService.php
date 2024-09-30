@@ -23,6 +23,19 @@ class TaskService
                                ->filter();            
     }
     
+    public function getUserTasks($board)
+    {
+        if ($board->user_id === Auth::id()) {
+            return $board->tasks;
+        }
+
+        if ($board->collaborators->contains(Auth::id())) {
+            return $board->tasks;
+        }
+
+        return collect();
+    }
+
 
 
 }
