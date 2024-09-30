@@ -64,4 +64,27 @@ class BoardControllerTest extends TestCase
             ->assertSee($collaboratedBoard->name);  // Check the collaborated board name appears in the view
     }
     
+    public function test_index_does_not_show_a_specific_board_name()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board that should not be shown
+        $board = Board::factory()->create(['user_id' => $user->id, 'name' => 'Specific Board']);
+    
+        // Delete the board
+        $board->delete();
+    
+        // Acting as the user
+        $this->actingAs($user)
+            ->get(route('boards.index'))
+            ->assertStatus(200)
+            ->assertViewHas('boardsOwned', function ($boardsOwned) {
+                return $boardsOwned->isEmpty();  // Assert no owned boards
+            })
+            ->assertViewHas('boardsCollaborated', function ($boardsCollaborated) {
+                return $boardsCollaborated->isEmpty();  // Assert no collaborated boards
+            })
+            ->assertDontSee($board->name);  // Ensure the specific board name is not displayed
+    }
 }
