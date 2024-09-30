@@ -36,6 +36,14 @@ class TaskService
         return collect();
     }
 
+    public function getTaskByProgress($tasks, $progress)
+    {
+        return $tasks->where('progress', $progress)
+                     ->groupBy(function($task) {
+                         return Carbon::parse($task->due)->format('Y-m-d');
+                     })->sortKeys();
+    }
+
 
 
 }
