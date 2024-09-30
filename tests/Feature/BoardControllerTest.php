@@ -145,4 +145,35 @@ class BoardControllerTest extends TestCase
         });
     }
     
+    public function test_store_fails_when_board_name_already_exists()
+    {
+        // Arrange: Create a user and act as that user
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Create a board with a unique name
+        $existingBoard = Board::factory()->create([
+            'name' => 'Existing Board',
+            'user_id' => $user->id,
+        ]);
+
+        // Define the board data with the same name as the existing board
+        $data = [
+            'name' => $existingBoard->name, // Duplicate name
+            'description' => 'This is another test board.',
+        ];
+
+        // Act: Make a POST request to the store method
+        $response = $this->withoutMiddleware()->post(route('boards.store'), $data);
+
+        // Assert: Check if the response has validation errors
+        $response->assertSessionHasErrors(['name']); // Check for errors related to the 'name' field
+
+        // Assert that the error message matches expected message
+        $this->assertEquals('The board name must be unique. Please choose a different name.', session('errors')->get('name')[0]);
+
+        // Check that no new board was created in the database
+        $this->assertDatabaseCount('boards', 1); // Ensure only the existing board remains
+    }
+
 }
