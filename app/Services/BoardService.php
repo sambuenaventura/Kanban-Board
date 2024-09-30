@@ -74,5 +74,20 @@ class BoardService
         return $board->collaborators ?? collect();
     }
 
+    public function getNonCollaboratorsExcludingInvited($board)
+    {
+        $collaborators = $this->getCollaborators($board);
+        $pendingInvitations = $this->getPendingInvitations($board);
+        $invitedUserIds = $pendingInvitations->pluck('user_id');
+    
+        return $this->userModel->whereDoesntHave('boards', function ($query) use ($board) {
+                $query->where('boards.id', $board->id);
+            })
+            ->where('id', '!=', auth()->id())
+            ->whereNotIn('id', $collaborators->pluck('id'))
+            ->whereNotIn('id', $invitedUserIds)
+            ->get();
+    }
+    
 
 }
