@@ -302,4 +302,73 @@ class BoardControllerTest extends TestCase
         $response->assertStatus(403); // Unauthorized access should return a 403 status
     }
     
+    public function test_show_displays_tasks_for_the_board()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner', // Assuming the creator is the owner
+        ]);
+    
+        // Create tasks associated with the board using the board_user_id
+        $task1 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id, // Use the board_user_id
+            'name' => 'Task 1',
+            'description' => 'Description for Task 1',
+            'due' => now()->addDays(7),
+            'priority' => 'medium',
+            'progress' => 'to_do',
+        ]);
+
+        // Create tasks associated with the board using the board_user_id
+        $task2 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id, // Use the board_user_id
+            'name' => 'Task 2',
+            'description' => 'Description for Task 2',
+            'due' => now()->addDays(7),
+            'priority' => 'low',
+            'progress' => 'in_progress',
+        ]);
+    
+        $task3 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id, // Use the board_user_id
+            'name' => 'Task 3',
+            'description' => 'Description for Task 3',
+            'due' => now()->addDays(14),
+            'priority' => 'high',
+            'progress' => 'done',
+        ]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Access the board's show method
+        $response = $this->get(route('boards.show', $board->id));
+
+        $this->assertTaskInView($response, 'toDoTasks', $task1);
+        $this->assertTaskInView($response, 'inProgressTasks', $task2);
+        $this->assertTaskInView($response, 'doneTasks', $task3);
+    }  
+        protected function assertTaskInView($response, $viewVariable, $task)
+        {
+            $response->assertViewHas($viewVariable, function ($groupedTasks) use ($task) {
+                foreach ($groupedTasks as $date => $tasksForDate) {
+                    if ($tasksForDate->contains($task)) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+    
 }
