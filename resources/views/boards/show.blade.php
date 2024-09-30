@@ -84,7 +84,7 @@
 
                         <!-- To Do Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $countToDo }})</span></h4>
+                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $taskCounts['toDo'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="to_do">
                                 @foreach ($toDoTasks as $date => $tasksForDate)
                                     <div class="mb-4">
@@ -137,7 +137,7 @@
 
                         <!-- In Progress Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $countInProgress }})</span></h4>
+                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $taskCounts['inProgress'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="in_progress">
                                 @foreach ($inProgressTasks as $date => $tasksForDate)
                                     <div class="mb-4">
@@ -190,7 +190,7 @@
 
                         <!-- Done Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">Done <span class="text-xs task-count">({{ $countDone }})</span></h4>
+                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">Done <span class="text-xs task-count">({{ $taskCounts['done'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="done">
                                 @foreach ($doneTasks as $date => $tasksForDate)
                                     <div class="mb-4">
