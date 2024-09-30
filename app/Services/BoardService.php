@@ -69,5 +69,10 @@ class BoardService
         return $board;
     }
 
+    public function getCollaborators($board)
+    {
+        return $board->collaborators ?? collect();
+    }
+
 
 }
