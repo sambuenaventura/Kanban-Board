@@ -35,5 +35,15 @@ class BoardService
                                 ->get();
     }
 
+    public function getCollaboratedBoards($userId)
+    {
+        return $this->boardModel->with(['user', 'tasks', 'collaborators'])
+                                ->withCount(['tasks', 'boardUsers'])
+                                ->whereHas('collaborators', function ($query) use ($userId) {
+                                    $query->where('users.id', $userId);
+                                })
+                                ->get();
+    }
+
 
 }
