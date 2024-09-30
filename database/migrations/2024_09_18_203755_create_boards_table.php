@@ -12,10 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('boards', function (Blueprint $table) {
-            $table->id(); // auto-incrementing ID
+            $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->timestamps(); // created_at and updated_at
+            $table->string('description')->nullable();
+            $table->timestamps();
         });
     }
 
