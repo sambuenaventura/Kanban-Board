@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\BoardCreated;
 use App\Http\Requests\StoreBoardRequest;
+use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
@@ -149,18 +150,16 @@ class BoardController extends Controller
         return view('boards.edit', compact('board'));
     }
 
-    public function update(Request $request, $id)
+
+    public function update(UpdateBoardRequest $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-    
         $board = Board::findOrFail($id);
+
         $this->authorize('update', $board);
 
         $board->update($request->only(['name']));
-        return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
 
+        return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
     }
     
     
