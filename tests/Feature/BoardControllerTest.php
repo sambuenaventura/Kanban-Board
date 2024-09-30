@@ -10,6 +10,8 @@ use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\Task;
 use App\Services\BoardService;
+use App\Events\BoardCreated;
+use Illuminate\Support\Facades\Event;
 
 class BoardControllerTest extends TestCase
 {
@@ -107,4 +109,40 @@ class BoardControllerTest extends TestCase
         $response->assertSee('Delete Board', false);
         $response->assertSee('Edit Board', false); 
     }
+
+    public function test_store_creates_a_board_and_broadcasts_event()
+    {
+        // Arrange: Create a user and act as that user
+        $user = User::factory()->create();
+        $this->actingAs($user);
+    
+        // Define the board data
+        $data = [
+            'name' => 'Test Board',
+            'description' => 'This is a test board.',
+        ];
+    
+        // Fake the event dispatcher
+        Event::fake();
+    
+        // Act: Make a POST request to the store method
+        $response = $this->withoutMiddleware()->post(route('boards.store'), $data);
+    
+        // Assert: Check if the board was created successfully
+        $response->assertRedirect(route('boards.index')); // Ensure it redirects to the boards index
+        $response->assertSessionHas('success', 'Board created successfully.'); // Check for the success message
+    
+        // Assert that the board exists in the database
+        $this->assertDatabaseHas('boards', [
+            'name' => 'Test Board',
+            'description' => 'This is a test board.',
+            'user_id' => $user->id,  // Ensure the user is linked to the board
+        ]);
+    
+        // Assert that the event was dispatched
+        Event::assertDispatched(BoardCreated::class, function ($event) use ($data, $user) {
+            return $event->board->name === $data['name'] && $event->board->user_id === $user->id;
+        });
+    }
+    
 }
