@@ -45,5 +45,12 @@ class BoardService
                                 ->get();
     }
 
+    public function addTaskCountsToBoards($boards)
+    {
+        return $boards->each(function ($board) {
+            $board->taskCounts = $this->taskModel->getTaskCounts($board->id);
+        });
+    }
+
 
 }
