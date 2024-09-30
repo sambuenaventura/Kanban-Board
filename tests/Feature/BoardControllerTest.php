@@ -87,4 +87,24 @@ class BoardControllerTest extends TestCase
             })
             ->assertDontSee($board->name);  // Ensure the specific board name is not displayed
     }
+    
+    public function test_index_page_renders_board_modals()
+    {
+        $user = User::factory()->create();
+    
+        $response = $this->actingAs($user)
+                         ->get(route('boards.index'));
+    
+        // Checking if the modal div is present
+        $response->assertSee('<div id="boardModal"', false);
+    
+        $response->assertSee('<div id="deleteBoardModal"', false);
+    
+        $response->assertSee('<div id="editBoardModal"', false);
+    
+        // Optionally, check for specific text or elements within the modal
+        $response->assertSee('Create New Board', false);
+        $response->assertSee('Delete Board', false);
+        $response->assertSee('Edit Board', false); 
+    }
 }
