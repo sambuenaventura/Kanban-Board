@@ -27,5 +27,13 @@ class BoardService
         $this->boardInvitationModel = $boardInvitationModel;
     }
 
+    public function getOwnedBoards($userId)
+    {
+        return $this->boardModel->with(['user', 'tasks', 'boardUsers'])
+                                ->withCount(['tasks', 'boardUsers'])
+                                ->where('user_id', $userId)
+                                ->get();
+    }
+
 
 }
