@@ -176,4 +176,23 @@ class BoardControllerTest extends TestCase
         $this->assertDatabaseCount('boards', 1); // Ensure only the existing board remains
     }
 
+    public function test_store_fails_when_name_is_missing()
+    {
+        // Arrange: Create a user and act as that user
+        $user = User::factory()->create();
+        $this->actingAs($user);
+    
+        // Define the board data without the 'name' field
+        $data = [
+            'description' => 'This is a test board without a name.',
+        ];
+    
+        // Act: Make a POST request to the store method
+        $response = $this->withoutMiddleware()->post(route('boards.store'), $data);
+    
+        // Assert: Check for validation errors
+        $response->assertSessionHasErrors(['name']);
+        $this->assertEquals('The name is required.', session('errors')->get('name')[0]);
+    }
+
 }
