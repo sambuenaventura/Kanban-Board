@@ -271,4 +271,20 @@ class BoardControllerTest extends TestCase
         $response->assertStatus(404); // Expecting a 404 status
     }
 
+    public function test_show_allows_authorized_user_to_view_board()
+    {
+        // Arrange: Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id]); // Create a board for the user
+        $this->actingAs($user); // Act as the authenticated user
+
+        // Act: Make a GET request to the show method
+        $response = $this->get(route('boards.show', $board->id));
+
+        // Assert: Check that the response is successful and the view is returned
+        $response->assertStatus(200); // Check for a successful response
+        $response->assertViewIs('boards.show'); // Ensure the correct view is returned
+        $response->assertViewHas('board', $board); // Check that the board is passed to the view
+    }
+    
 }
