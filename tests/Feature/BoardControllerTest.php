@@ -215,4 +215,31 @@ class BoardControllerTest extends TestCase
         $this->assertEquals('The name field must not be greater than 255 characters.', session('errors')->get('name')[0]);
     }
 
+    public function test_store_creates_a_board_without_description()
+    {
+        // Arrange: Create a user and act as that user
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Define the board data without a description
+        $data = [
+            'name' => 'Test Board Without Description',
+            'description' // is omitted
+        ];
+
+        // Act: Make a POST request to the store method
+        $response = $this->withoutMiddleware()->post(route('boards.store'), $data);
+
+        // Assert: Check if the board was created successfully
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('success', 'Board created successfully.');
+
+        // Assert that the board exists in the database
+        $this->assertDatabaseHas('boards', [
+            'name' => 'Test Board Without Description',
+            'user_id' => $user->id,
+            'description' => null, // Description should be null
+        ]);
+    }
+
 }
