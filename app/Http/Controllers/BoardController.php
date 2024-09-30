@@ -10,6 +10,8 @@ use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\BoardService;
+use App\Services\TaskService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +20,15 @@ use Illuminate\Support\Facades\Cache;
 class BoardController extends Controller
 {
     use AuthorizesRequests;
+
+    protected $boardService;
+    protected $taskService;
+
+    public function __construct(BoardService $boardService, TaskService $taskService)
+    {
+        $this->boardService = $boardService;
+        $this->taskService = $taskService;
+    }
 
     public function index()
     {
