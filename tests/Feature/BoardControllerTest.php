@@ -258,4 +258,17 @@ class BoardControllerTest extends TestCase
         $response->assertViewHas('board', $board); // Check that the board is passed to the view
     }
 
+    public function test_show_throws_404_if_board_not_found()
+    {
+        // Arrange: Create a user and act as that user
+        $user = User::factory()->create();
+        $this->actingAs($user); // Act as the authenticated user
+    
+        // Act: Make a GET request to a non-existing board ID
+        $response = $this->get(route('boards.show', 9999)); // Assuming 9999 does not exist
+    
+        // Assert: Check that a 404 response is returned
+        $response->assertStatus(404); // Expecting a 404 status
+    }
+
 }
