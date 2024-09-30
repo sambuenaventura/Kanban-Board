@@ -69,59 +69,40 @@ class BoardController extends Controller
     
         $this->authorize('view', $board);
     
-        $tasks = $board->getUserTasks();
+        $tasks = $this->taskService->getUserTasks($board);
         
         // Get collaborators
-        $collaborators = $board->collaborators ?? collect();
+        $collaborators = $this->boardService->getCollaborators($board);
     
         // Fetch users who are not collaborators or the authenticated user
-        $nonCollaborators = User::whereDoesntHave('boards', function ($query) use ($board) {
-            $query->where('boards.id', $board->id);
-        })
-            ->where('id', '!=', auth()->id())
-            ->whereNotIn('id', $collaborators->pluck('id')) // Exclude collaborators
-            ->get();
+        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board);
     
         // Fetch pending invitations
-        $pendingInvitations = BoardInvitation::where('board_id', $board->id)
-            ->where('status', 'pending')
-            ->with('invitedUser')
-            ->get();
-    
-        // Exclude users with pending invitations from nonCollaborators
-        $invitedUserIds = $pendingInvitations->pluck('user_id');
-        $nonCollaborators = $nonCollaborators->whereNotIn('id', $invitedUserIds);
+        $pendingInvitations = $this->boardService->getPendingInvitations($board);
     
         // Filter by tags
-        $tags = $request->query('tags', null);
-    
-        if ($tags) {
-            $selectedTags = array_unique(is_array($tags) ? $tags : explode(',', $tags));
-            $tasks = $tasks->filter(function($task) use ($selectedTags) {
-                return in_array($task->tag, $selectedTags);
-            });
+        $selectedTags = $this->getSelectedTags($request);
+
+        if (!empty($selectedTags)) {
+            $tasks = $this->filterTasksByTags($tasks, $selectedTags);
         } else {
-            $selectedTags = [];
+            $tasks = $tasks;
         }
+
+        $toDoTasks = $this->taskService->getTaskByProgress($tasks, 'to_do');
+        $inProgressTasks = $this->taskService->getTaskByProgress($tasks, 'in_progress');
+        $doneTasks = $this->taskService->getTaskByProgress($tasks, 'done');
     
-        $toDoTasks = Board::getTaskByProgress($tasks, 'to_do');
-        $inProgressTasks = Board::getTaskByProgress($tasks, 'in_progress');
-        $doneTasks = Board::getTaskByProgress($tasks, 'done');
-    
-        $countToDo = $toDoTasks->count();
-        $countInProgress = $inProgressTasks->flatten()->count();
-        $countDone = $doneTasks->flatten()->count();
-    
-        $allTags = $board->getAllTags();
+        $taskCounts = $this->taskService->getTaskCounts($tasks);
+
+        $allTags = $this->taskService->getAllTags($board);
 
         return view('boards.show', compact(
             'board', 
             'toDoTasks', 
             'inProgressTasks', 
             'doneTasks', 
-            'countToDo', 
-            'countInProgress', 
-            'countDone', 
+            'taskCounts',
             'selectedTags', 
             'allTags',
             'collaborators', 
@@ -129,6 +110,22 @@ class BoardController extends Controller
             'pendingInvitations'
         ));
     }
+
+    // Method to handle tag selection
+    protected function getSelectedTags(Request $request)
+    {
+        $tags = $request->query('tags', null);
+        return $tags ? array_unique(is_array($tags) ? $tags : explode(',', $tags)) : [];
+    }
+
+    // Method to filter tasks by tags
+    protected function filterTasksByTags($tasks, $selectedTags)
+    {
+        return $tasks->filter(function ($task) use ($selectedTags) {
+            return in_array($task->tag, $selectedTags);
+        });
+    }
+
 
     public function edit($id)
     {
