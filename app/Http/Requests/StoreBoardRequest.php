@@ -31,6 +31,7 @@ class StoreBoardRequest extends FormRequest
     {
         return [
             'name.required' => 'The name is required.',
+            'name.unique' => 'The board name must be unique. Please choose a different name.',
         ];
     }
 }
