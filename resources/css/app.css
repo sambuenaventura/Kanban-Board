@@ -161,3 +161,10 @@ select {
     color: #1a202c;
     font-weight: 600;
 }
+
+.long-text {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
