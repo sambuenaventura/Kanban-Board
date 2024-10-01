@@ -110,7 +110,6 @@ class BoardController extends Controller
             'pendingInvitations'
         ));
     }
-
     // Method to handle tag selection
     protected function getSelectedTags(Request $request)
     {
@@ -140,7 +139,7 @@ class BoardController extends Controller
 
         $this->authorize('update', $board);
 
-        $board->update($request->only(['name']));
+        $board->update($request->only(['name', 'description']));
 
         return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
     }
