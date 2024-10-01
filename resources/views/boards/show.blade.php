@@ -17,25 +17,20 @@
                 <div class="h-full p-4 sm:p-6 text-gray-900 flex flex-col ">
                     
                     <div class="flex items-center mb-6 pb-4 border-b">
-                        <button @click="showFilters = !showFilters" class="inline-flex items-center px-2 py-2 mr-2 border border-transparent rounded-md font-semibold text-xs text-gray-600 uppercase tracking-widest hover:bg-gray-200 focus:outline-none focus:border-gray-300 focus:ring focus:ring-gray-200 disabled:opacity-25">
+                        <button @click="showFilters = !showFilters" class="flex-shrink-0 inline-flex items-center px-2 py-2 mr-2 border border-transparent rounded-md font-semibold text-xs text-gray-600 uppercase tracking-widest hover:bg-gray-200 focus:outline-none focus:border-gray-300 focus:ring focus:ring-gray-200 disabled:opacity-25">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"></path>
                             </svg>
                         </button>
-                        <div class="">
-
-                            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+                        <div class="flex-grow min-w-0 mr-4">
+                            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 truncate">
                                 {{ $board->name }}
                                 <span id="update-indicator" class="inline-flex items-center px-2 py-0.5 ml-2 text-xs font-medium text-indigo-800 bg-indigo-100 rounded-full opacity-0 transition-opacity duration-300">
                                     Updated
                                 </span>
-                            </h1>                            
-                            {{-- <h5 class="text-sm font-bold text-gray-600 ml-1">
-                                Due Today:
-                                {{ $getDues }}
-                            </h5> --}}
+                            </h1>
                         </div>
-                        <div class="flex space-x-4 ml-auto">
+                        <div class="flex space-x-4 flex-shrink-0">
                             <button id="openModalBtn" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:border-indigo-700 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -84,7 +79,7 @@
 
                         <!-- To Do Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $taskCounts['toDo'] }})</span></h4>
+                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $taskCounts['to_do'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="to_do">
                                 @foreach ($toDoTasks as $date => $tasksForDate)
                                     <div class="mb-4">
@@ -137,7 +132,7 @@
 
                         <!-- In Progress Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
-                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $taskCounts['inProgress'] }})</span></h4>
+                            <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $taskCounts['in_progress'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="in_progress">
                                 @foreach ($inProgressTasks as $date => $tasksForDate)
                                     <div class="mb-4">
