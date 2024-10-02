@@ -736,4 +736,68 @@ class BoardControllerTest extends TestCase
         // Assert that there are no checkboxes rendered for tags
         $response->assertDontSee('<input type="checkbox" name="tags[]"'); // This checks if checkbox inputs for tags are not present
     }
+    
+    public function test_show_filters_tasks_by_multiple_tags()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner', 
+        ]);
+    
+        // Create tasks associated with the board using the board_user_id and with tags
+        $task1 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task 1',
+            'tag' => 'urgent',
+            'progress' => 'to_do',
+        ]);
+    
+        $task2 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task 2',
+            'tag' => 'feature',
+            'progress' => 'in_progress',
+        ]);
+    
+        $task3 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task 3',
+            'tag' => 'urgent',
+            'progress' => 'done',
+        ]);
+
+        $task4 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task 4',
+            'tag' => 'backlog',
+            'progress' => 'to_do',
+        ]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Make a request with multiple selected tags
+        $response = $this->get(route('boards.show', [
+            'id' => $board->id,
+            'tags' => ['urgent', 'feature'],  // Request tasks tagged as 'urgent' and 'feature'
+        ]));
+    
+        // Assert: Tasks with the 'urgent' or 'feature' tags should be returned
+        $this->assertTaskInView($response, 'toDoTasks', $task1);
+        $this->assertTaskInView($response, 'inProgressTasks', $task2);
+        $this->assertTaskInView($response, 'doneTasks', $task3);
+        $this->assertTaskNotInView($response, 'toDoTasks', $task4);
+    }
 }
