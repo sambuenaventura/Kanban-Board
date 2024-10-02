@@ -827,4 +827,34 @@ class BoardControllerTest extends TestCase
             'name' => 'Updated Board Name'
         ]);
     }
+
+    public function test_update_board_description()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board for the user with name and description
+        $board = Board::factory()->create(['user_id' => $user->id, 'name' => 'Board Name', 'description' => 'Old Board Description']);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Send a request to update the board description
+        $response = $this->withoutMiddleware()->put(route('boards.update', $board->id), [
+            'name' => 'Board Name',
+            'description' => 'Updated Board Description'
+        ]);
+    
+        // Assert: Redirected to boards.index with success message
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('success', 'Board updated successfully.');
+    
+        // Assert: The board's description is updated
+        $this->assertDatabaseHas('boards', [
+            'id' => $board->id,
+            'name' => 'Board Name',
+            'description' => 'Updated Board Description'
+        ]);
+    }
+    
 }
