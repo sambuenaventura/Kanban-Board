@@ -220,27 +220,36 @@ class BoardControllerTest extends TestCase
         // Arrange: Create a user and act as that user
         $user = User::factory()->create();
         $this->actingAs($user);
-
+    
         // Define the board data without a description
         $data = [
             'name' => 'Test Board Without Description',
-            'description' // is omitted
+            'description' => null, // Explicitly set to null
         ];
+        
+        // Fake the event dispatcher
+        Event::fake();
 
         // Act: Make a POST request to the store method
         $response = $this->withoutMiddleware()->post(route('boards.store'), $data);
-
+    
         // Assert: Check if the board was created successfully
         $response->assertRedirect(route('boards.index'));
         $response->assertSessionHas('success', 'Board created successfully.');
-
+    
         // Assert that the board exists in the database
         $this->assertDatabaseHas('boards', [
             'name' => 'Test Board Without Description',
             'user_id' => $user->id,
             'description' => null, // Description should be null
         ]);
+
+        // Assert that the event was dispatched
+        Event::assertDispatched(BoardCreated::class, function ($event) use ($data, $user) {
+            return $event->board->name === $data['name'] && $event->board->user_id === $user->id;
+        });
     }
+    
 
     public function test_show_returns_board_view()
     {
