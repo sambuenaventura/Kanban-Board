@@ -938,4 +938,24 @@ class BoardControllerTest extends TestCase
         $response->assertNotFound();
     }
 
+    public function test_update_board_with_no_changes()
+    {
+        // Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id, 'name' => 'Same Name', 'description' => 'Same Description']);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Update the board with the same data
+        $response = $this->withoutMiddleware()->put(route('boards.update', $board->id), [
+            'name' => 'Same Name',
+            'description' => 'Same Description'
+        ]);
+    
+        // Assert: The response is still successful
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('success', 'Board updated successfully.');
+    }
+
 }
