@@ -147,20 +147,25 @@ class BoardController extends Controller
     
     public function destroy(Request $request, $id)
     {
-        $board = $this->findBoardOrFail($id);
-
+        // Check if the request is a duplicate using the idempotency key
         if ($this->isAlreadyDeleted($request->idempotency_key)) {
             return redirect()->route('boards.index')->with('warning', 'The board has already been deleted.');
-        }        
+        }
+    
+        // Find the board only if it's not already deleted
+        $board = $this->findBoardOrFail($id);
         
         $this->authorize('delete', $board);
     
+        // Proceed with deleting the board
         $board->delete();
-        
+    
+        // Cache the idempotency key to prevent future duplicate deletes
         $this->cacheIdempotencyKey($request->idempotency_key);
-        
+    
         return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
     }
+    
 
     protected function findBoardOrFail($id)
     {
