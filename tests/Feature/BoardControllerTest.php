@@ -1046,4 +1046,25 @@ class BoardControllerTest extends TestCase
         $response->assertNotFound();
     }
 
+    public function test_destroy_board_without_idempotency_key()
+    {
+        // Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Send a delete request without an idempotency key
+        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id));
+    
+        // Assert: Redirected with success message
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('success', 'Board deleted successfully.');
+    
+        // Assert: The board is deleted from the database
+        $this->assertDatabaseMissing('boards', ['id' => $board->id]);
+    }
+    
+
 }
