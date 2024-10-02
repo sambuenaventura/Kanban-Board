@@ -683,4 +683,28 @@ class BoardControllerTest extends TestCase
         });
     }
 
+    public function test_show_displays_board_owner_information()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner',
+        ]);
+    
+        // Simulate a request to the show method
+        $response = $this->actingAs($user)->get(route('boards.show', $board->id));
+    
+        // Assert that the response is successful
+        $response->assertStatus(200);
+    
+        // Assert that the owner's information is present in the view
+        $response->assertSee($user->name);
+    }
 }
