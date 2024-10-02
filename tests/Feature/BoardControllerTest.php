@@ -707,4 +707,33 @@ class BoardControllerTest extends TestCase
         // Assert that the owner's information is present in the view
         $response->assertSee($user->name);
     }
+
+    public function test_show_handles_empty_tags_gracefully()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner',
+        ]);
+    
+        // Act: Simulate the request to the show method
+        $response = $this->actingAs($user)->get(route('boards.show', $board->id));
+    
+        // Assert: Check that the view is returned and no errors occur
+        $response->assertStatus(200);
+    
+        // Assert the filter section exists
+        $response->assertSee('Filter by tag'); // Check that the filter title is visible
+        $response->assertSee('Apply'); // Check for the apply button
+    
+        // Assert that there are no checkboxes rendered for tags
+        $response->assertDontSee('<input type="checkbox" name="tags[]"'); // This checks if checkbox inputs for tags are not present
+    }
 }
