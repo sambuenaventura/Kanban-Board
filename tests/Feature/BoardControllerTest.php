@@ -11,6 +11,7 @@ use App\Models\BoardUser;
 use App\Models\Task;
 use App\Services\BoardService;
 use App\Events\BoardCreated;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Event;
 
 class BoardControllerTest extends TestCase
@@ -429,8 +430,8 @@ class BoardControllerTest extends TestCase
         $collaborator2 = User::factory()->create();        
         $nonCollaborator = User::factory()->create();
         $pendingInvitedUser = User::factory()->create();
-    
-        // Create a board with the owner
+
+        // Create a board with the owner   
         $board = Board::factory()->create(['user_id' => $owner->id]);
     
         // Create BoardUser records for the owner and collaborator
@@ -579,6 +580,54 @@ class BoardControllerTest extends TestCase
         // Assert that the response contains only the urgent task
         $this->assertTaskInView($response, 'toDoTasks', $task1);
         $this->assertTaskNotInView($response, 'inProgressTasks', $task2); // This should fail
+    }
+
+    public function test_show_displays_correct_task_counts()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner',
+        ]);
+    
+        // Create tasks with appropriate progress statuses
+        $task1 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'progress' => 'to_do',
+        ]);
+    
+        $task2 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'progress' => 'in_progress',
+        ]);
+    
+        $task3 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'progress' => 'done',
+        ]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Access the board's show method
+        $response = $this->get(route('boards.show', $board->id));
+    
+        // Assert: The response should contain the correct task counts
+        $response->assertViewHas('taskCounts', function ($taskCounts) use ($task1, $task2, $task3) {
+            return $taskCounts['to_do'] === 1 &&
+                   $taskCounts['in_progress'] === 1 &&
+                   $taskCounts['done'] === 1;
+        });
     }
     
 
