@@ -857,4 +857,27 @@ class BoardControllerTest extends TestCase
         ]);
     }
     
+    public function test_unauthorized_user_cannot_update_board()
+    {
+        // Create two users: one as the board owner and one unauthorized
+        $owner = User::factory()->create();
+        $unauthorizedUser = User::factory()->create();
+
+        // Create a board owned by the first user
+        $board = Board::factory()->create(['user_id' => $owner->id]);
+
+        // Act: Authenticate as the unauthorized user
+        $this->actingAs($unauthorizedUser);
+
+        // Act: Attempt to update the board
+        $response = $this->withoutMiddleware()->put(route('boards.update', $board->id), [
+            'name' => 'New Name',
+            'description' => 'New Description'
+        ]);
+
+        // Assert: The user is forbidden from updating the board
+        $response->assertStatus(403);
+        
+    }
+
 }
