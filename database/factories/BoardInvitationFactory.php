@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Board;
+use App\Models\BoardInvitation;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -11,11 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class BoardInvitationFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = BoardInvitation::class;
+
     public function definition()
     {
         return [
