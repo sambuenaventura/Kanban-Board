@@ -481,6 +481,52 @@ class BoardControllerTest extends TestCase
             return $invitation->user_id === $pendingInvitedUser->id;
         }));
     }
+
+    public function test_show_filters_tasks_by_tags()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner', 
+        ]);
+    
+        // Create tasks associated with the board using the board_user_id and with tags
+        $task1 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task 1',
+            'tag' => 'urgent',
+            'progress' => 'to_do',
+        ]);
+    
+        $task2 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task 2',
+            'tag' => 'feature',
+            'progress' => 'in_progress',
+        ]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Make a request with selected tags
+        $response = $this->get(route('boards.show', [
+            'id' => $board->id,
+            'tags' => ['urgent'],  // Request only tasks tagged as 'urgent'
+        ]));
+    
+        // Assert: Only tasks with the 'urgent' tag should be returned
+        $this->assertTaskInView($response, 'toDoTasks', $task1);
+        $this->assertTaskNotInView($response, 'inProgressTasks', $task2);
+    }
     
 
 }
