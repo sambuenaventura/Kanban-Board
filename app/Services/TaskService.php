@@ -47,11 +47,12 @@ class TaskService
     public function getTaskCounts($tasks)
     {
         return [
-            'toDo' => $tasks->where('progress', 'to_do')->count(),
-            'inProgress' => $tasks->where('progress', 'in_progress')->count(),
+            'to_do' => $tasks->where('progress', 'to_do')->count(),
+            'in_progress' => $tasks->where('progress', 'in_progress')->count(),
             'done' => $tasks->where('progress', 'done')->count(),
         ];
     }
+    
 
 
 }
