@@ -800,4 +800,31 @@ class BoardControllerTest extends TestCase
         $this->assertTaskInView($response, 'doneTasks', $task3);
         $this->assertTaskNotInView($response, 'toDoTasks', $task4);
     }
+
+    public function test_update_board_name()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board for the user
+        $board = Board::factory()->create(['user_id' => $user->id, 'name' => 'Old Board Name']);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Send a request to update the board name
+        $response = $this->withoutMiddleware()->put(route('boards.update', $board->id), [
+            'name' => 'Updated Board Name'
+        ]);
+    
+        // Assert: Redirected to boards.index with success message
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('success', 'Board updated successfully.');
+    
+        // Assert: The board's name is updated
+        $this->assertDatabaseHas('boards', [
+            'id' => $board->id,
+            'name' => 'Updated Board Name'
+        ]);
+    }
 }
