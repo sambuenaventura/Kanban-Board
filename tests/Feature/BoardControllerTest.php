@@ -900,4 +900,24 @@ class BoardControllerTest extends TestCase
         $this->assertEquals('The name is required.', session('errors')->get('name')[0]);
     }
     
+    public function test_update_board_fails_when_name_exceeds_max_length()
+    {
+        // Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id]);
+
+        // Act: Authenticate the user
+        $this->actingAs($user);
+
+        // Act: Attempt to update the board with invalid data
+        $response = $this->withoutMiddleware()->put(route('boards.update', $board->id), [
+            'name' => str_repeat('A', 256),
+            'description' => 'Description'
+        ]);
+
+        // Assert: The request fails validation and redirects back
+        $response->assertSessionHasErrors(['name']);
+        $this->assertEquals('The name field must not be greater than 255 characters.', session('errors')->get('name')[0]);
+    }
+
 }
