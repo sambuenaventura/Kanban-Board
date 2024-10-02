@@ -527,6 +527,59 @@ class BoardControllerTest extends TestCase
         $this->assertTaskInView($response, 'toDoTasks', $task1);
         $this->assertTaskNotInView($response, 'inProgressTasks', $task2);
     }
+
+    public function test_show_displays_only_tasks_with_selected_tags()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner',
+        ]);
+    
+        // Create tasks associated with the board using the board_user_id
+        $task1 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Urgent Task',
+            'description' => 'Description for Urgent Task',
+            'due' => now()->addDays(7),
+            'priority' => 'medium',
+            'progress' => 'to_do',
+            'tag' => 'urgent',
+        ]);
+
+        $task2 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Regular Task',
+            'description' => 'Description for Regular Task',
+            'due' => now()->addDays(14),
+            'priority' => 'low',
+            'progress' => 'in_progress',
+            'tag' => 'regular',
+        ]);
+
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Access the board's show method with a filter for 'urgent'
+        $response = $this->get(route('boards.show', [
+            'id' => $board->id,
+            'tags' => ['urgent'],
+        ]));
+    
+        // Assert that the response contains only the urgent task
+        $this->assertTaskInView($response, 'toDoTasks', $task1);
+        $this->assertTaskNotInView($response, 'inProgressTasks', $task2); // This should fail
+    }
     
 
 }
