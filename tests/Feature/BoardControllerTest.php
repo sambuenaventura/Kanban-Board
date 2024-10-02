@@ -630,5 +630,57 @@ class BoardControllerTest extends TestCase
         });
     }
     
+    public function test_show_displays_all_tags_for_the_board()
+    {
+        // Create a user
+        $user = User::factory()->create();
+    
+        // Create a board with the user as the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Create the BoardUser record for the user on this board
+        $boardUser = BoardUser::factory()->create([
+            'user_id' => $user->id,
+            'board_id' => $board->id,
+            'role' => 'owner',
+        ]);
+    
+        // Create tasks associated with the board with various tags
+        $task1 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task with Tag 1',
+            'tag' => 'urgent',
+            'progress' => 'to_do',
+        ]);
+    
+        $task2 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task with Tag 2',
+            'tag' => 'feature',
+            'progress' => 'in_progress',
+        ]);
+    
+        $task3 = Task::factory()->create([
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+            'name' => 'Task with Tag 3',
+            'tag' => 'urgent',
+            'progress' => 'done',
+        ]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Access the board's show method
+        $response = $this->get(route('boards.show', $board->id));
+    
+        // Assert: The response should contain all unique tags from the tasks
+        $response->assertViewHas('allTags', function ($tags) use ($task1, $task2, $task3) {
+            return collect($tags)->contains('urgent') &&
+                   collect($tags)->contains('feature');
+        });
+    }
 
 }
