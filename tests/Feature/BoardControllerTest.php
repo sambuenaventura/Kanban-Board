@@ -920,4 +920,22 @@ class BoardControllerTest extends TestCase
         $this->assertEquals('The name field must not be greater than 255 characters.', session('errors')->get('name')[0]);
     }
 
+    public function test_update_nonexistent_board_fails()
+    {
+        // Create a user
+        $user = User::factory()->create();
+
+        // Act: Authenticate the user
+        $this->actingAs($user);
+
+        // Act: Attempt to update a non-existent board
+        $response = $this->withoutMiddleware()->put(route('boards.update', 9999), [
+            'name' => 'New Name',
+            'description' => 'New Description'
+        ]);
+
+        // Assert: The response should be a 404 Not Found
+        $response->assertNotFound();
+    }
+
 }
