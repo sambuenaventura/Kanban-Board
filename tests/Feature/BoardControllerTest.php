@@ -980,4 +980,31 @@ class BoardControllerTest extends TestCase
         $this->assertDatabaseMissing('boards', ['id' => $board->id]);
     }
 
+    public function test_destroy_board_with_duplicate_idempotency_key()
+    {
+        // Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id]);
+    
+        // Act: Authenticate the user
+        $this->actingAs($user);
+    
+        // Act: Send a delete request for the first time with a unique idempotency key
+        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+    
+        // Assert: Check that the board has been deleted
+        $this->assertDatabaseMissing('boards', ['id' => $board->id]);
+    
+        // Act: Attempt to delete again with the same idempotency key
+        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+    
+        // Assert: Ensure the response is redirected with a warning message
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('warning', 'The board has already been deleted.');
+    }
+    
 }
