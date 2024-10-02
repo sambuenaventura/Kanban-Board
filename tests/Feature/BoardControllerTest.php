@@ -367,7 +367,35 @@ class BoardControllerTest extends TestCase
         $this->assertTaskInView($response, 'toDoTasks', $task1);
         $this->assertTaskInView($response, 'inProgressTasks', $task2);
         $this->assertTaskInView($response, 'doneTasks', $task3);
-    }  
+    }
+    
+    public function test_show_board_without_tasks()
+    {
+        // Create a user
+        $user = User::factory()->create();
+
+        // Create a board with the owner
+        $board = Board::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user);
+    
+        // Act: Make a GET request to the show method
+        $response = $this->get(route('boards.show', $board->id));
+    
+        // Assert: Check that the response is successful and the view is returned
+        $response->assertStatus(200);
+        $response->assertViewIs('boards.show');
+        $response->assertViewHas('board', $board);
+       
+        // Create an empty collection for reuse
+        $emptyCollection = new Collection();
+
+        // Assert that no tasks are present ($emptyCollection - Ensures they are an empty collection)
+        $response->assertViewHas('toDoTasks', $emptyCollection);
+        $response->assertViewHas('inProgressTasks', $emptyCollection);
+        $response->assertViewHas('doneTasks', $emptyCollection);
+    }
+            // Helper function to assert task is in the view
         protected function assertTaskInView($response, $viewVariable, $task)
         {
             $response->assertViewHas($viewVariable, function ($groupedTasks) use ($task) {
@@ -380,6 +408,19 @@ class BoardControllerTest extends TestCase
             });
         }
     
+        // Helper function to assert task is NOT in the view
+        protected function assertTaskNotInView($response, $viewVariable, $task)
+        {
+            $response->assertViewHas($viewVariable, function ($groupedTasks) use ($task) {
+                foreach ($groupedTasks as $date => $tasksForDate) {
+                    if ($tasksForDate->contains($task)) {
+                        return false;  // Fail if the task is found
+                    }
+                }
+                return true;  // Pass if the task is not found
+            });
+        }
+
     public function test_show_fetched_collaborators_non_collaborators_and_pending_invitations()
     {
         // Create users
