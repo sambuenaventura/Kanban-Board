@@ -1007,4 +1007,25 @@ class BoardControllerTest extends TestCase
         $response->assertSessionHas('warning', 'The board has already been deleted.');
     }
     
+
+    public function test_unauthorized_user_cannot_delete_board()
+    {
+        // Create two users: one as the board owner and one unauthorized
+        $owner = User::factory()->create();
+        $unauthorizedUser = User::factory()->create();
+
+        // Create a board owned by the first user
+        $board = Board::factory()->create(['user_id' => $owner->id]);
+
+        // Act: Authenticate as the unauthorized user
+        $this->actingAs($unauthorizedUser);
+
+        // Act: Attempt to delete the board
+        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+
+        // Assert: The user is forbidden from deleting the board
+        $response->assertForbidden();
+    }
 }
