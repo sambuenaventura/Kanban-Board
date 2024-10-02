@@ -880,4 +880,24 @@ class BoardControllerTest extends TestCase
         
     }
 
+    public function test_update_board_fails_when_name_is_missing()
+    {
+        // Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id]);
+
+        // Act: Authenticate the user
+        $this->actingAs($user);
+
+        // Act: Attempt to update the board with invalid data
+        $response = $this->withoutMiddleware()->put(route('boards.update', $board->id), [
+            'name' => '',  // Invalid empty name
+            'description' => 'Description'
+        ]);
+
+        // Assert: The request fails validation and redirects back
+        $response->assertSessionHasErrors(['name']);
+        $this->assertEquals('The name is required.', session('errors')->get('name')[0]);
+    }
+    
 }
