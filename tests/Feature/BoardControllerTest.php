@@ -958,4 +958,26 @@ class BoardControllerTest extends TestCase
         $response->assertSessionHas('success', 'Board updated successfully.');
     }
 
+    public function test_destroy_board_successfully()
+    {
+        // Create a user and a board
+        $user = User::factory()->create();
+        $board = Board::factory()->create(['user_id' => $user->id]);
+
+        // Act: Authenticate the user
+        $this->actingAs($user);
+
+        // Act: Send a delete request
+        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+
+        // Assert: Redirected to boards.index with success message
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('success', 'Board deleted successfully.');
+
+        // Assert: The board is deleted from the database
+        $this->assertDatabaseMissing('boards', ['id' => $board->id]);
+    }
+
 }
