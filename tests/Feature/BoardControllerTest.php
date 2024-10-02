@@ -1028,4 +1028,22 @@ class BoardControllerTest extends TestCase
         // Assert: The user is forbidden from deleting the board
         $response->assertForbidden();
     }
+
+    public function test_destroy_nonexistent_board()
+    {
+        // Create a user
+        $user = User::factory()->create();
+
+        // Act: Authenticate the user
+        $this->actingAs($user);
+
+        // Act: Attempt to delete a non-existent board
+        $response = $this->withoutMiddleware()->delete(route('boards.destroy', 9999), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+
+        // Assert: The response should be a 404 Not Found
+        $response->assertNotFound();
+    }
+
 }
