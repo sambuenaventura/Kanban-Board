@@ -12,6 +12,7 @@ use App\Http\Requests\UploadFileRequest;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
+use App\Services\TaskService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -22,10 +23,17 @@ class TaskController extends Controller
 {
     use AuthorizesRequests;
 
+    protected $taskService;
+
+    public function __construct(TaskService $taskService)
+    {
+        $this->taskService = $taskService;
+    }
+
     public function index($boardId)
     {
-        $tasks = Task::where('board_id', $boardId)->get(); // Good, retrieves tasks for the specified board
-        return view('boards.tasks.index', compact('tasks', 'boardId')); // Correct
+        $tasks = Task::where('board_id', $boardId)->get();
+        return view('boards.tasks.index', compact('tasks', 'boardId'));
     }
 
     public function create($boardId)
@@ -224,26 +232,6 @@ class TaskController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Task status updated']);
     }
-
-    // public function destroyFile($boardId, $taskId, $attachmentId)
-    // {
-    //     // Fetch the task by ID
-    //     $task = Task::findOrFail($taskId);
-        
-    //     // Check if the user is authorized (assuming you're using the 'owner' method)
-    //     $this->authorize('owner', $task);
-    
-    //     // Find the attachment and delete it
-    //     if ($attachmentItem = $task->media()->find($attachmentId)) {
-    //         $attachmentItem->delete();
-    //     } else {
-    //         return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $taskId])
-    //                          ->with('error', 'Attachment item not found.');
-    //     }
-    
-    //     return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $taskId])
-    //                      ->with('success', 'Attachment deleted successfully');
-    // }
 
     public function destroyFile(Task $task, $attachmentId)
     {  
