@@ -31,8 +31,11 @@
 
                             <div>
                                 <label for="due" class="block text-sm font-medium text-gray-700">Due Date</label>
-                                <input type="date" name="due" id="due" value="{{ old('due', $task->due) }}" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <input type="date" name="due" id="due" 
+                                       value="{{ old('due', $task->due ? \Carbon\Carbon::parse($task->due)->format('Y-m-d') : '') }}" 
+                                       class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             </div>
+                            
 
                             <div>
                                 <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>
