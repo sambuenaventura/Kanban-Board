@@ -6,6 +6,8 @@ use App\Events\BoardInvitationCount;
 use App\Events\BoardInvitationDetailsSent;
 use App\Events\BoardInvitationDetailsCanceled;
 use App\Events\BoardRemoveCollaborator;
+use App\Http\Requests\InviteUserRequest;
+use App\Http\Requests\ProcessInvitationRequest;
 use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
@@ -94,32 +96,23 @@ class BoardUserController extends Controller
     }
     
 
-    public function acceptInvitation(BoardInvitation $invitation)
+    public function acceptInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
     {
-        // Ensure the authenticated user is the invitee
-        if ($invitation->user_id !== auth()->id()) {
-            return redirect()->route('boards.show', $invitation->board_id)->withErrors('Unauthorized action.');
+        $response = $this->boardInvitationService->acceptInvitation($invitation, $request->idempotency_key);
+    
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $invitation->board_id)->withErrors(['user' => $response['error']]);
         }
     
-        // Add the user to the board
-        BoardUser::create([
-            'board_id' => $invitation->board_id,
-            'user_id' => $invitation->user_id,
-            'role' => 'collaborator',
-        ]);
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $invitation->board_id)->with('warning', $response['warning']);
+        }
     
-        // Update invitation status
-        $invitation->update(['status' => 'accepted']);
-
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-        
-    
-        return redirect()->route('boards.show', $invitation->board_id)->with('success', 'You have joined the board.');
+        return redirect()->route('boards.show', $invitation->board_id)->with('success', $response['success']);
     }
+    
+    
+    
     
     public function declineInvitation(BoardInvitation $invitation)
     {
