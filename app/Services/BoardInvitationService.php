@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Events\BoardInvitationCount;
+use App\Events\BoardInvitationDetailsCanceled;
 use App\Events\BoardInvitationDetailsSent;
 use App\Events\BoardRemoveCollaborator;
+use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
@@ -179,5 +181,44 @@ class BoardInvitationService
             ->get();
     }
 
+    public function cancelInvitation(Board $board, BoardInvitation $invitation, $idempotencyKey)
+    {
+        // Idempotency check (to prevent duplicate actions)
+        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
+            return ['warning' => 'This action has already been processed.'];
+        }
+
+        // Check if the invitation belongs to the correct board
+        if ($invitation->board_id !== $board->id) {
+            return ['error' => 'Invitation not found for this board.'];
+        }
+
+        $userId = $invitation->user_id;
+
+        // Check if the user has already joined the board
+        if ($board->users()->where('users.id', $userId)->exists()) {
+            return ['warning' => 'User has already joined the board. Invitation cannot be canceled.'];
+        }
+
+        // Check if the invitation has been declined
+        if ($invitation->status === 'declined') {
+            return ['warning' => 'User has already declined the invitation. Invitation cannot be canceled.'];
+        }
+
+        // Delete the invitation
+        $invitation->delete();
+
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+
+        broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
+        
+        // Store the idempotency key in the cache
+        $this->cacheIdempotencyKey($idempotencyKey);
+
+        return ['success' => 'Invitation canceled successfully.'];
+    }
     
 }
