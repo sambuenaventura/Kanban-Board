@@ -137,46 +137,37 @@ class BoardUserController extends Controller
         return view('boards.manage-invitations', compact('pendingInvitations'));
     }
     
-    public function cancelInvitation(Board $board, BoardInvitation $invitation)
+    public function cancelInvitation(ProcessInvitationRequest $request, Board $board, $invitation)
     {
-        // Authorize the action, checking if the authenticated user is the inviter
-        // $this->authorize('cancel', $invitation);
-
+        // If $invitation is already a model instance, use it directly
+        if (!($invitation instanceof BoardInvitation)) {
+            $invitation = BoardInvitation::find($invitation);
+        }
+    
+        // Check if the invitation was found
+        if (!$invitation) {
+            // Treat as a successful idempotent operation
+            return redirect()->route('boards.show', $board->id)
+                ->with('warning', 'The invitation has already been canceled.');
+        }
+    
         // Check if the invitation belongs to the correct board
         if ($invitation->board_id !== $board->id) {
-            return redirect()->route('boards.show', $board->id)->withErrors('Invitation not found for this board.');
+            return redirect()->route('boards.show', $board->id)->withErrors(['invitation' => 'Invitation not found for this board.']);
         }
-
-        $userId = $invitation->user_id;
-
-        // Check if the user has already joined the board
-        $isMember = $board->users()->where('users.id', $userId)->exists();
-
-        if ($isMember) {
-            // User has already joined the board, so do not cancel the invitation
-            return redirect()->route('boards.show', $board->id)->with('warning', 'User has already joined the board. Invitation cannot be canceled.');
+    
+        $response = $this->boardInvitationService->cancelInvitation($board, $invitation, $request->idempotency_key);
+        
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['error']]);
         }
-
-        // Check if the invitation has been declined
-        if ($invitation->status === 'declined') {
-            return redirect()->route('boards.show', $board->id)->with('warning', 'User has already declined the invitation. Invitation cannot be canceled.');
+    
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $board->id)->with('warning', $response['warning']);
         }
-
-        // Delete the invitation
-        $invitation->delete();
-
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-
-        // Broadcast the canceled invitation details
-        broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
-       
-        // Redirect back with a success message
-        return redirect()->route('boards.show', $board->id)->with('success', 'Invitation canceled successfully.');
+    
+        return redirect()->route('boards.show', $board->id)->with('success', $response['success']);
     }
-
+    
 
 }
