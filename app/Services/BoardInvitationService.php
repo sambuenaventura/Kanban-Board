@@ -106,5 +106,45 @@ class BoardInvitationService
         Cache::put('idempotency_' . $idempotencyKey, true, 86400);
     }
 
+    public function acceptInvitation(BoardInvitation $invitation, $idempotencyKey)
+    {
+        // Idempotency check (to prevent duplicate actions)
+        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
+            return ['warning' => 'This action has already been processed.'];
+        }
+    
+        // Ensure the authenticated user is the invitee
+        if ($invitation->user_id !== auth()->id()) {
+            return ['error' => 'Unauthorized action.'];
+        }
+    
+        // Check if the user is already a collaborator
+        $isCollaborator = BoardUser::where('board_id', $invitation->board_id)
+                                    ->where('user_id', $invitation->user_id)
+                                    ->exists();
+    
+        if ($isCollaborator) {
+            return ['warning' => 'You are already a collaborator on this board.'];
+        }
+    
+        // Add the user to the board
+        BoardUser::create([
+            'board_id' => $invitation->board_id,
+            'user_id' => $invitation->user_id,
+            'role' => 'collaborator',
+        ]);
+    
+        // Update invitation status
+        $invitation->update(['status' => 'accepted']);
+    
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+    
+        // Broadcast the updated invitation count
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+    
+        return ['success' => 'You have joined the board.'];
+    }
+
     
 }
