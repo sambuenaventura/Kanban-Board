@@ -63,46 +63,20 @@ class BoardUserController extends Controller
 
     public function removeUserFromBoard(Request $request, Board $board, User $user)
     {
-        if (Cache::has('idempotency_' . $request->idempotency_key)) {
-            return redirect()->route('boards.show', $board->id)->with('warning', 'User has already been removed from this board.');
-        }
+        $this->authorize('owner', $board);
 
-        $this->authorize('delete', $board);
-
-        $board->users()->detach($user->id);
-
-        broadcast(new BoardRemoveCollaborator($user->id, $board->id));  
+        $response = $this->boardInvitationService->removeUserFromBoard($board, $user, $request->idempotency_key);
         
-        Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
-
-        return redirect()->route('boards.show', $board->id)->with('success', 'User removed from the board successfully.');
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['error']]);
+        }
+    
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $board->id)->with('warning', $response['warning']);
+        }
+    
+        return redirect()->route('boards.show', $board->id)->with('success', $response['success']);
     }
-
-    public function inviteUserToBoard(Request $request, $boardId)
-    {
-        // Validate the request data
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        if (Cache::has('idempotency_' . $request->idempotency_key)) {
-            return redirect()->route('boards.show', $boardId)->with('warning', 'An invitation has already been sent to this user.');
-        }
-        
-        // Check if the user is already a member of the board
-        $isCollaborator = BoardUser::where('board_id', $boardId)
-            ->where('user_id', $request->user_id)
-            ->exists();
-    
-        if ($isCollaborator) {
-            return redirect()->back()->withErrors(['user' => 'This user is already a collaborator on the board.']);
-        }
-    
-        // Check if the user already has an invitation
-        $existingInvite = BoardInvitation::where('board_id', $boardId)
-            ->where('user_id', $request->user_id)
-            ->where('status', 'pending')
-            ->first();
     
         if ($existingInvite) {
             // return redirect()->back()->withErrors(['user' => 'An invitation has already been sent to this user.']);
