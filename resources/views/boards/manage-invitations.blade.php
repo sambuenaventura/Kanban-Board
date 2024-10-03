@@ -24,12 +24,14 @@
                                 <div class="flex space-x-3">
                                     <form action="{{ route('boards.acceptInvitation', $invitation) }}" method="POST">
                                         @csrf
+                                        <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
                                         <button type="submit" class="px-6 py-2 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 shadow-md hover:shadow-lg">
                                             Accept
                                         </button>
                                     </form>
                                     <form action="{{ route('boards.declineInvitation', $invitation) }}" method="POST">
                                         @csrf
+                                        <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
                                         <button type="submit" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md hover:shadow-lg">
                                             Decline
                                         </button>
