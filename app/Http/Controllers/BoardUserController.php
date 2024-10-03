@@ -114,24 +114,21 @@ class BoardUserController extends Controller
     
     
     
-    public function declineInvitation(BoardInvitation $invitation)
+    public function declineInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
     {
-        // Ensure the authenticated user is the invitee
-        if ($invitation->user_id !== auth()->id()) {
-            return redirect()->route('boards.show', $invitation->board_id)->withErrors('Unauthorized action.');
-        }
+        $response = $this->boardInvitationService->declineInvitation($invitation, $request->idempotency_key);
     
-        // Update invitation status to declined
-        $invitation->update(['status' => 'declined']);
+        if (isset($response['error'])) {
+            return redirect()->route('dashboard')->withErrors(['user' => $response['error']]);
+        }
 
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
+        if (isset($response['warning'])) {
+            return redirect()->route('dashboard')->with('warning', $response['warning']);
+        }
 
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-                
-        return redirect()->route('dashboard')->with('success', 'You declined the invitation.');
+        return redirect()->route('boards.index')->with('success', $response['success']);
     }
+    
     
     public function manageInvitations()
     {
