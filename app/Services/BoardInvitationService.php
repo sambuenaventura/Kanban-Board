@@ -95,5 +95,16 @@ class BoardInvitationService
         // Return success response
         return ['success' => 'Invitation sent successfully.'];
     }
+
+    public function isIdempotencyKeyUsed($idempotencyKey)
+    {
+        return Cache::has('idempotency_' . $idempotencyKey);
+    }
+
+    public function cacheIdempotencyKey($idempotencyKey)
+    {
+        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
+    }
+
     
 }
