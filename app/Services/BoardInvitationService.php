@@ -7,6 +7,7 @@ use App\Events\BoardInvitationDetailsSent;
 use App\Events\BoardRemoveCollaborator;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 class BoardInvitationService
@@ -146,5 +147,28 @@ class BoardInvitationService
         return ['success' => 'You have joined the board.'];
     }
 
+    public function declineInvitation(BoardInvitation $invitation, $idempotencyKey)
+    {
+        // Idempotency check (to prevent duplicate actions)
+        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
+            return ['warning' => 'This action has already been processed.'];
+        }
+
+        // Ensure the authenticated user is the invitee
+        if ($invitation->user_id !== auth()->id()) {
+            return ['error' => 'Unauthorized action.'];
+        }
+
+        // Update invitation status to declined
+        $invitation->update(['status' => 'declined']);
+
+        // Fetch the updated invitation count for the invitee
+        $invitationCount = User::find($invitation->user_id)->invitationCount();
+
+        // Broadcast the updated invitation count
+        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+        
+        return ['success' => 'You declined the invitation.'];
+    }
     
 }
