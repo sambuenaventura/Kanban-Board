@@ -10,6 +10,7 @@ use App\Models\Board;
 use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
+use App\Services\BoardInvitationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,13 @@ use Illuminate\Support\Facades\Cache;
 class BoardUserController extends Controller
 {
     use AuthorizesRequests;
+
+    protected $boardInvitationService;
+
+    public function __construct(BoardInvitationService $boardInvitationService)
+    {
+        $this->boardInvitationService = $boardInvitationService;
+    }
 
     // public function addUserToBoard(Request $request, $boardId)
     // {
