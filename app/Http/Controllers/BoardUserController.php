@@ -132,10 +132,7 @@ class BoardUserController extends Controller
     
     public function manageInvitations()
     {
-        $pendingInvitations = BoardInvitation::where('user_id', auth()->id())
-            ->where('status', 'pending')
-            ->with(['board', 'inviter'])
-            ->get();
+        $pendingInvitations = $this->boardInvitationService->getPendingInvitationsForUser(auth()->id());
     
         return view('boards.manage-invitations', compact('pendingInvitations'));
     }
