@@ -48,6 +48,7 @@
                                                 <form action="{{ route('boards.cancelInvitation', ['board' => $invitation->board_id, 'invitation' => $invitation->id]) }}" method="POST" class="inline">
                                                     @csrf
                                                     @method('DELETE')
+                                                    <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
                                                     <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors duration-200 flex items-center">
 
                                                         <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
