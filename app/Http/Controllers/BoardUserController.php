@@ -78,42 +78,19 @@ class BoardUserController extends Controller
         return redirect()->route('boards.show', $board->id)->with('success', $response['success']);
     }
     
-        if ($existingInvite) {
-            // return redirect()->back()->withErrors(['user' => 'An invitation has already been sent to this user.']);
-            return redirect()->back()->with('warning', 'An invitation has already been sent to this user.');
+    public function inviteUserToBoard(InviteUserRequest $request, $boardId)
+    {
+        $response = $this->boardInvitationService->inviteUser($boardId, $request->user_id, $request->idempotency_key);
+    
+        if (isset($response['error'])) {
+            return redirect()->back()->withErrors(['user' => $response['error']]);
         }
     
-        // Send an invitation
-        $invitation = BoardInvitation::create([
-            'board_id' => $boardId,
-            'user_id' => $request->user_id,
-            'invited_by' => auth()->id(),
-            'status' => 'pending',
-        ]);
-
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-        
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-
-        // Prepare the invitation details for broadcasting
-        $invitationDetails = [
-            'id' => $invitation->id,
-            'board' => [
-                'name' => $invitation->board->name,
-            ],
-            'inviter' => [
-                'name' => auth()->user()->name,
-            ],
-            'created_at' => $invitation->created_at
-        ];
-
-        broadcast(new BoardInvitationDetailsSent($request->user_id, $invitationDetails));
-
-        Cache::put('idempotency_' . $request->idempotency_key, true, 86400);
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $boardId)->with('warning', $response['warning']);
+        }
     
-        return redirect()->route('boards.show', $boardId)->with('success', 'Invitation sent successfully.');
+        return redirect()->route('boards.show', $boardId)->with('success', $response['success']);
     }
     
 
