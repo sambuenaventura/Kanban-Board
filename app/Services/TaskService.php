@@ -262,6 +262,15 @@ class TaskService
     }
     
     
+    
+    public function authorizeUserForTask(Task $task, $user)
+    {
+        if (!$user->can('isOwnerOrCollaborator', $task)) {
+            abort(403, 'Unauthorized action.');
+        }
+    }
+
+    
     public function isIdempotencyKeyUsed($idempotencyKey)
     {
         return Cache::has('idempotency_' . $idempotencyKey);
