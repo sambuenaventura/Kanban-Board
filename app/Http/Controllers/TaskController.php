@@ -151,24 +151,23 @@ class TaskController extends Controller
         }
     }
 
-
-    public function updateStatus(Request $request, $taskId)
+    public function updateStatus(UpdateTaskStatusRequest $request, $taskId)
     {
-        $task = Task::findOrFail($taskId);
-
-        $this->authorize('isOwnerOrCollaborator', $task);
-        
-        $request->validate([
-            'progress' => 'required|string|in:to_do,in_progress,done',
-        ]);
-        
-        $task->progress = $request->input('progress');
-        $task->save();
-
-        broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
-
-        return response()->json(['success' => true, 'message' => 'Task status updated']);
+        try {
+            $response = $this->taskService->updateTaskStatus($taskId, $request->input('progress'));
+            return response()->json($response);
+        } 
+        catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Task not found.'], 404);
+        } 
+        catch (AuthorizationException $e) {
+            return response()->json(['message' => 'This action is unauthorized.'], 403);
+        } 
+        catch (\Exception $e) {
+            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
+    
 
     public function destroyFile(Task $task, $attachmentId)
     {  
