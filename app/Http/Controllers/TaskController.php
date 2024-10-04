@@ -105,22 +105,19 @@ class TaskController extends Controller
         return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
                          ->with('success', $response['success']);
     }
-    
-    
+
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
-        $this->authorize('isOwnerOrCollaborator', $task);
+        $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'));
     
-        $taskName = $task->name;
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $task->board_id)
+                             ->withErrors(['task' => $response['error']]);
+        }
     
-        // Add media to task
-        $task->addMediaFromRequest('attachment')->toMediaCollection('attachments');
-    
-        // Redirect with boardId and taskId
         return to_route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
-            ->with('success', 'Successfully added an attachment to ' . $taskName . '.');
+            ->with('success', $response['success']);
     }
-    
     
 
     public function destroy($boardId, $taskId)
