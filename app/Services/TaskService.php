@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Board;
+use App\Models\BoardUser;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -9,10 +11,14 @@ use Illuminate\Support\Facades\Auth;
 class TaskService
 {
     protected $taskModel;
+    protected $boardModel;
+    protected $boardUserModel;
 
-    public function __construct(Task $taskModel)
+    public function __construct(Task $taskModel, Board $boardModel, BoardUser $boardUserModel)
     {
         $this->taskModel = $taskModel;
+        $this->boardModel = $boardModel;
+        $this->boardUserModel = $boardUserModel;
     }
 
     public function getAllTags($board)
