@@ -80,7 +80,7 @@
                 <div class="container mx-auto px-6 text-center">
                     <h2 class="text-4xl font-bold mb-10 gradient-text">Ready to Improve Your Workflow?</h2>
                     <a href="/boards" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-10 rounded-full text-xl transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg inline-block">
-                        Start Your Free Trial
+                        Start Today for Free
                     </a>
                 </div>
             </section>

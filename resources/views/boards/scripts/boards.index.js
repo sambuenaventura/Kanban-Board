@@ -5,8 +5,6 @@ window.Echo.channel("boards").listen(".board.created", (e) => {
 
 //Board Remove Collaborator Event
 document.addEventListener("DOMContentLoaded", () => {
-    // const currentUserId = window.currentUserId;
-
     const boardContainer = document.getElementById("board-container");
 
     // Listen for WebSocket event to remove a board
@@ -34,9 +32,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     const noBoardsMessage = document.createElement("div");
                     noBoardsMessage.id = "no-boards-message";
                     noBoardsMessage.className =
-                        "col-span-full text-center py-12 bg-white rounded-lg shadow-md border border-gray-200";
-                    noBoardsMessage.innerHTML =
-                        '<p class="text-gray-600 text-lg">No boards found. Join a team to start collaborating!</p>';
+                        "col-span-full text-center py-12 bg-gray-100 rounded-lg shadow-md border border-gray-200";
+                    noBoardsMessage.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" class="mx-auto" fill="#9CA3AF">
+                            <path d="M240-120q-66 0-113-47T80-280q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm480 0q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm-480-80q33 0 56.5-23.5T320-280q0-33-23.5-56.5T240-360q-33 0-56.5 23.5T160-280q0 33 23.5 56.5T240-200Zm480 0q33 0 56.5-23.5T800-280q0-33-23.5-56.5T720-360q-33 0-56.5 23.5T640-280q0 33 23.5 56.5T720-200ZM480-520q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-680q0-33-23.5-56.5T480-760q-33 0-56.5 23.5T400-680q0 33 23.5 56.5T480-600Zm0-80Zm240 400Zm-480 0Z"/>
+                        </svg>
+                        <p class="mt-4 text-lg font-medium text-gray-600">No boards found. Join a team to start collaborating!</p>
+                    `;
                     boardContainer.appendChild(noBoardsMessage);
                 }
             } else {
