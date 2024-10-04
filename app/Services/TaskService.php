@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Events\BoardTaskCreated;
+use App\Events\BoardTaskDeleted;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
@@ -192,6 +193,29 @@ class TaskService
         return [
             'success' => 'Task deleted successfully.',
             'taskId' => $taskId,
+        ];
+    }
+    
+    public function deleteTaskAjax($id)
+    {
+        // Find the task by ID
+        $task = $this->taskModel->findOrFail($id);
+    
+        $this->authorizeUserForTask($task, auth()->user());
+    
+        // Get the board ID before deleting the task
+        $boardId = $task->board_id;
+    
+        // Delete the task
+        $task->delete();
+    
+        // Dispatch the TaskDeleted event
+        broadcast(new BoardTaskDeleted($task->id, $boardId));
+    
+        return [
+            'success' => 'Task deleted successfully.',
+            'taskId' => $task->id,
+            'boardId' => $boardId,
         ];
     }
     
