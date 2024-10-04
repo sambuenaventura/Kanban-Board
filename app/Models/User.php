@@ -58,4 +58,12 @@ class User extends Authenticatable
         return $this->hasMany(BoardUser::class);
     }
 
+    public function invitationCount()
+    {
+        return BoardInvitation::where('user_id', $this->id)
+            ->where('status', 'pending')
+            ->count();
+    }
+    
+
 }

@@ -6,14 +6,17 @@ document.addEventListener("DOMContentLoaded", () => {
         link.addEventListener("click", (event) => {
             event.preventDefault();
             taskIdToRemove = event.target.dataset.taskId; // Get task ID from data attribute
-            document.getElementById("removeTaskModal").style.display = "block"; // Show the modal
+            const removeTaskModal = document.getElementById("removeTaskModal");
+            if (removeTaskModal) {
+                removeTaskModal.style.display = "block"; // Show the modal
+            }
         });
     });
 
     // Confirm removal
-    document
-        .getElementById("confirmRemoveBtn")
-        .addEventListener("click", () => {
+    const confirmRemoveBtn = document.getElementById("confirmRemoveBtn");
+    if (confirmRemoveBtn) {
+        confirmRemoveBtn.addEventListener("click", () => {
             fetch(`/tasks/${taskIdToRemove}/remove`, {
                 method: "DELETE",
                 headers: {
@@ -25,7 +28,12 @@ document.addEventListener("DOMContentLoaded", () => {
             })
                 .then((response) => {
                     if (!response.ok) {
-                        throw new Error("Network response was not ok");
+                        // Handle specific status codes
+                        return response.json().then((err) => {
+                            throw new Error(
+                                `Error ${response.status}: ${err.message}`
+                            );
+                        });
                     }
                     return response.json();
                 })
@@ -50,14 +58,27 @@ document.addEventListener("DOMContentLoaded", () => {
                             `Task with ID ${taskIdToRemove} deleted successfully.`
                         );
                     }
-                    document.getElementById("removeTaskModal").style.display =
-                        "none"; // Hide the modal
+                    const removeTaskModal =
+                        document.getElementById("removeTaskModal");
+                    if (removeTaskModal) {
+                        removeTaskModal.style.display = "none"; // Hide the modal
+                    }
                 })
-                .catch((error) => console.error("Error:", error));
+                .catch((error) => {
+                    console.error("Error:", error);
+                    alert(error.message); // Display an alert with the error message
+                });
         });
+    }
 
     // Cancel removal
-    document.getElementById("cancelRemoveBtn").addEventListener("click", () => {
-        document.getElementById("removeTaskModal").style.display = "none"; // Hide the modal
-    });
+    const cancelRemoveBtn = document.getElementById("cancelRemoveBtn");
+    if (cancelRemoveBtn) {
+        cancelRemoveBtn.addEventListener("click", () => {
+            const removeTaskModal = document.getElementById("removeTaskModal");
+            if (removeTaskModal) {
+                removeTaskModal.style.display = "none"; // Hide the modal
+            }
+        });
+    }
 });

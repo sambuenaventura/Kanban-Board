@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateBoardRequest extends FormRequest
 {
@@ -11,7 +12,7 @@ class UpdateBoardRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +23,22 @@ class UpdateBoardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('boards')->ignore($this->route('id'))->where(function ($query) {
+                    return $query->where('user_id', auth()->id());
+                }),
+            ],
+            'description' => ['nullable', 'string', 'max:500'],
+        ];
+    }
+    
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'The name is required.',
         ];
     }
 }

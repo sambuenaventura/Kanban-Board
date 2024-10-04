@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('board_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->unique(['board_id', 'user_id']); // Ensure a user can only be added once to a board
+            $table->string('role');
             $table->timestamps();
         });
     }

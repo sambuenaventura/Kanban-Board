@@ -5,25 +5,25 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+                    <a href="{{ route('boards.index') }}">
                         <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
                     </a>
                 </div>
-
-                <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                    <x-nav-link :href="route('boards.index')" :active="request()->routeIs('boards.*') && !request()->routeIs('boards.manageInvitations')">
+                        {{ __('Boards') }}
                     </x-nav-link>
                 </div>
-                {{-- <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('tasks.index')" :active="request()->routeIs('tasks.index')">
-                        {{ __('Tasks') }}
-                    </x-nav-link>
-                </div> --}}
+                
+                
+
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('boards.index')" :active="request()->routeIs('boards.index')">
-                        {{ __('Boards') }}
+                    <x-nav-link :href="route('boards.manageInvitations')" :active="request()->routeIs('boards.manageInvitations')" class="relative flex items-center">
+                        {{ __('Board Invitations') }}
+                        @php $invitationCount = auth()->user()->invitationCount(); @endphp
+                        <span id="invitation-count-badge" class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center {{ $invitationCount > 0 ? '' : 'hidden' }}">
+                            {{ $invitationCount }}
+                        </span>
                     </x-nav-link>
                 </div>
             </div>

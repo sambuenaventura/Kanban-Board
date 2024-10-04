@@ -15,14 +15,17 @@ class TaskModal extends Component
     public $board;
     public $collaborators; 
     public $nonCollaborators; 
+    public $pendingInvitations; 
 
-    public function __construct(string $modalType, $board = null, $collaborators = null, $nonCollaborators = null)
+    public function __construct(string $modalType, $board = null, $collaborators = null, $nonCollaborators = null, $pendingInvitations = null)
     {
         $this->modalType = $modalType;
         $this->board = $board;
         $this->collaborators = $collaborators;
         $this->nonCollaborators = $nonCollaborators;
+        $this->pendingInvitations = $pendingInvitations;
     }
+    
     
 
     /**
@@ -39,8 +42,10 @@ class TaskModal extends Component
                 'board' => $this->board,
                 'collaborators' => $this->collaborators,
                 'nonCollaborators' => $this->nonCollaborators,
+                'pendingInvitations' => $this->pendingInvitations,
             ]);
         }
+        
         if ($this->modalType === 'delete-board-task') {
             return view('boards.modals.task.delete-task-modal');
         }

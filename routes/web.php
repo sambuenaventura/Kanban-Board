@@ -32,7 +32,17 @@ Route::get('/auth/redirect', function() {
 Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 Route::middleware(['auth'])->group(function () {
+    // Board user management and invitations routes
+    Route::get('/boards/invitations', [BoardUserController::class, 'manageInvitations'])->name('boards.manageInvitations');
+    Route::post('/boards/{board}/invite', [BoardUserController::class, 'inviteUserToBoard'])->name('boards.inviteUser');
+    Route::post('/boards/invitations/{invitation}/accept', [BoardUserController::class, 'acceptInvitation'])->name('boards.acceptInvitation');
+    Route::post('/boards/invitations/{invitation}/decline', [BoardUserController::class, 'declineInvitation'])->name('boards.declineInvitation');
     
+    Route::delete('/boards/{board}/invitations/{invitation}', [BoardUserController::class, 'cancelInvitation'])->name('boards.cancelInvitation');
+
+    Route::post('/boards/{board}/add-user', [BoardUserController::class, 'addUserToBoard'])->name('boards.addUser');
+    Route::delete('/boards/{board}/remove-user/{user}', [BoardUserController::class, 'removeUserFromBoard'])->name('boards.removeUser');
+
     // Board routes
     Route::get('/boards', [BoardController::class, 'index'])->name('boards.index');
     Route::get('/boards/create', [BoardController::class, 'create'])->name('boards.create');
@@ -41,7 +51,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/boards/{id}/edit', [BoardController::class, 'edit'])->name('boards.edit');
     Route::put('/boards/{id}', [BoardController::class, 'update'])->name('boards.update');
     Route::delete('/boards/{id}', [BoardController::class, 'destroy'])->name('boards.destroy');
-    Route::get('/boards/{id}', [BoardController::class, 'show'])->name('boards.show'); // Query Parameter Approach
 
     // Task routes under a specific board
     Route::get('/boards/{boardId}/tasks', [TaskController::class, 'index'])->name('boards.tasks.index');
@@ -52,16 +61,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'update'])->name('boards.tasks.update');
     Route::delete('/boards/{boardId}/tasks/{taskId}', [TaskController::class, 'destroy'])->name('boards.tasks.destroy');
 
-    // Board user management routes
-    Route::post('/boards/{board}/add-user', [BoardUserController::class, 'addUserToBoard'])->name('boards.addUser');
-    Route::delete('/boards/{board}/remove-user/{user}', [BoardUserController::class, 'removeUserFromBoard'])->name('boards.removeUser');
-
     // Task-specific actions
     Route::delete('/tasks/{id}/remove', [TaskController::class, 'remove'])->name('tasks.remove');       
     Route::patch('/tasks/{taskId}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     Route::post('/tasks/{task}/files', [TaskController::class, 'uploadFile'])->name('tasks.uploadFile');
     Route::delete('/tasks/{task}/{attachment}/files', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
-
 });
 
 

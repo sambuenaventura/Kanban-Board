@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BoardCreated;
 use App\Http\Requests\StoreBoardRequest;
+use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
+use App\Models\BoardInvitation;
 use App\Models\BoardUser;
+use App\Models\Task;
 use App\Models\User;
+use App\Services\BoardService;
+use App\Services\TaskService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,116 +21,110 @@ class BoardController extends Controller
 {
     use AuthorizesRequests;
 
+    protected $boardService;
+    protected $taskService;
+
+    public function __construct(BoardService $boardService, TaskService $taskService)
+    {
+        $this->boardService = $boardService;
+        $this->taskService = $taskService;
+    }
+
     public function index()
     {
         $userId = Auth::id();
-        
-        // Get boards where the user is either the owner or a collaborator
-        $boards = Board::with(['user', 'collaborators']) // Eager load user and collaborators
-                        ->withCount(['tasks', 'boardUsers'])
-                        ->where(function ($query) use ($userId) {
-                            $query->where('user_id', $userId) // The user is the owner $query->where('column_name', 'value'):
-                                        ->orWhereHas('collaborators', function ($subQuery) use ($userId) { // ->orWhereHas('relationshipName', function ($subQuery) use ($variable) {. The ->orWhereHas('collaborators', function ($subQuery) use ($userId) line accesses the board_users table through the collaborators relationship defined in the Board model.
-                                        $subQuery->where('users.id', $userId); // The user is a collaborator
-                                    });
-                        })
-                        ->get();
-    
-        return view('boards.index', compact('boards', 'userId'));
+        $boardsOwned = $this->boardService->getOwnedBoards($userId);
+        $boardsCollaborated = $this->boardService->getCollaboratedBoards($userId);
+
+        // Add task counts to each board
+        $this->boardService->addTaskCountsToBoards($boardsOwned);
+        $this->boardService->addTaskCountsToBoards($boardsCollaborated);
+
+        return view('boards.index', compact('boardsOwned', 'boardsCollaborated', 'userId'));
     }
+    
 
     public function create()
     {
         return view('boards.create');
     }
 
+
     public function store(StoreBoardRequest $request)
     {
         // Create a new board with the validated data
-        $board = Board::create([
-            'name' => $request->validated()['name'],  // 'validated()' ensures only valid data is used
-            'description' => $request->validated()['description'] ?? null, // Handle nullable description
-            'user_id' => auth()->id(),
-        ]);
+        $board = $this->boardService->createBoard($request->validated());
     
-        // Add the creator to the board_users table as the owner
-        BoardUser::create([
-            'board_id' => $board->id,
-            'user_id' => auth()->id(),
-            'role' => 'owner',
-        ]);
-    
+        // Dispatch boardcreated event
+        broadcast(new BoardCreated($board));
+            
         // Redirect to boards index or other relevant route
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
-    
 
-    
-
-    
-    
-    
 
     public function show($id, Request $request, Board $board)
     {
-        $board = Board::with('tasks')->findOrFail($id);
-        $tasks = $board->getUserTasks();
+        $board = Board::with('tasks', 'collaborators')->findOrFail($id);
+    
+        $this->authorize('view', $board);
+    
+        $tasks = $this->taskService->getUserTasks($board);
         
-        $collaborators = $board->collaborators ?? collect();
-        $nonCollaborators = User::whereDoesntHave('boards', function ($query) use ($board) {
-            $query->where('boards.id', $board->id);
-        })->where('id', '!=', auth()->id())->get() ?? collect();
-        
+        // Get collaborators
+        $collaborators = $this->boardService->getCollaborators($board);
+    
+        // Fetch users who are not collaborators or the authenticated user
+        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board);
+    
+        // Fetch pending invitations
+        $pendingInvitations = $this->boardService->getPendingInvitations($board);
+    
+        // Filter by tags
+        $selectedTags = $this->getSelectedTags($request);
 
-        // Authorization check to ensure the user can view this board
-        // $this->authorize('view', $board);
-    
-        // Retrieve the tags from the query string, or an empty array if not present
-        $tags = $request->query('tags', null);
-        
-        // Filter tasks by the selected tags, if any
-        if ($tags) {
-            // If tags is an array (e.g., from checkboxes), no need to explode
-            $selectedTags = array_unique(is_array($tags) ? $tags : explode(',', $tags)); // Remove duplicates
-            $tasks = $tasks->filter(function($task) use ($selectedTags) {
-                return in_array($task->tag, $selectedTags); // Assuming 'tag' is a field in the task model
-            });
+        if (!empty($selectedTags)) {
+            $tasks = $this->filterTasksByTags($tasks, $selectedTags);
         } else {
-            $selectedTags = [];
+            $tasks = $tasks;
         }
+
+        $toDoTasks = $this->taskService->getTaskByProgress($tasks, 'to_do');
+        $inProgressTasks = $this->taskService->getTaskByProgress($tasks, 'in_progress');
+        $doneTasks = $this->taskService->getTaskByProgress($tasks, 'done');
     
-        $toDoTasks = Board::getTaskByProgress($tasks, 'to_do');
-        $inProgressTasks = Board::getTaskByProgress($tasks, 'in_progress');
-        $doneTasks = Board::getTaskByProgress($tasks, 'done');
-    
-        $countToDo = $toDoTasks->count();
-        $countInProgress = $inProgressTasks->flatten()->count();
-        $countDone = $doneTasks->flatten()->count();
-    
-        $allTags = Board::getAllTags();
-    
+        $taskCounts = $this->taskService->getTaskCounts($tasks);
+
+        $allTags = $this->taskService->getAllTags($board);
+
         return view('boards.show', compact(
             'board', 
             'toDoTasks', 
             'inProgressTasks', 
             'doneTasks', 
-            'countToDo', 
-            'countInProgress', 
-            'countDone', 
+            'taskCounts',
             'selectedTags', 
             'allTags',
             'collaborators', 
-            'nonCollaborators'
+            'nonCollaborators',
+            'pendingInvitations'
         ));
     }
-    
-    
+    // Method to handle tag selection
+    protected function getSelectedTags(Request $request)
+    {
+        $tags = $request->query('tags', null);
+        return $tags ? array_unique(is_array($tags) ? $tags : explode(',', $tags)) : [];
+    }
 
+    // Method to filter tasks by tags
+    protected function filterTasksByTags($tasks, $selectedTags)
+    {
+        return $tasks->filter(function ($task) use ($selectedTags) {
+            return in_array($task->tag, $selectedTags);
+        });
+    }
 
-    
-    
-    
-    
 
     public function edit($id)
     {
@@ -132,27 +132,53 @@ class BoardController extends Controller
         return view('boards.edit', compact('board'));
     }
 
-    public function update(Request $request, $id)
+
+    public function update(UpdateBoardRequest $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-    
         $board = Board::findOrFail($id);
+
         $this->authorize('update', $board);
 
-        $board->update($request->only(['name']));
-        return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
+        $board->update($request->only(['name', 'description']));
 
+        return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
     }
     
     
-
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $board = Board::findOrFail($id);
+        // Check if the request is a duplicate using the idempotency key
+        if ($this->isAlreadyDeleted($request->idempotency_key)) {
+            return redirect()->route('boards.index')->with('warning', 'The board has already been deleted.');
+        }
+    
+        // Find the board only if it's not already deleted
+        $board = $this->findBoardOrFail($id);
+        
         $this->authorize('delete', $board);
+    
+        // Proceed with deleting the board
         $board->delete();
+    
+        // Cache the idempotency key to prevent future duplicate deletes
+        $this->cacheIdempotencyKey($request->idempotency_key);
+    
         return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
+    }
+    
+
+    protected function findBoardOrFail($id)
+    {
+        return Board::findOrFail($id);
+    }
+    
+    protected function isAlreadyDeleted($idempotencyKey)
+    {
+        return Cache::has('idempotency_' . $idempotencyKey);
+    }
+
+    protected function cacheIdempotencyKey($idempotencyKey)
+    {
+        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
     }
 }

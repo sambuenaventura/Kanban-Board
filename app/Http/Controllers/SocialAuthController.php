@@ -24,6 +24,6 @@ class SocialAuthController extends Controller
     
         Auth::Login($user);
         
-        return redirect('/dashboard');
+        return redirect('/boards')->with('success', 'Successfully logged in!');
     }
 }

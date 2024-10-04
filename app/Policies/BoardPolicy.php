@@ -30,8 +30,9 @@ class BoardPolicy
     // Proxy methods for CRUD actions
     public function view(User $user, Board $board)
     {
-        return $this->owner($user, $board);
+        return $this->isOwner($user, $board) || $board->collaborators()->where('user_id', $user->id)->exists();
     }
+    
 
     public function update(User $user, Board $board)
     {

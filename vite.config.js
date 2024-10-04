@@ -7,7 +7,7 @@ export default defineConfig({
             input: [
                 "resources/css/app.css",
                 "resources/js/app.js",
-                "resources/js/progress.js", // Added progress.js
+                // "resources/views/boards/scripts/boards.index.js",
             ],
             refresh: true,
         }),

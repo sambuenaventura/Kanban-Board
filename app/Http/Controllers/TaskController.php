@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\BoardTaskCreated;
+use App\Events\BoardTaskDeleted;
+use App\Events\BoardTaskUpdated;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Requests\UpdateTaskStatusRequest;
@@ -9,6 +12,9 @@ use App\Http\Requests\UploadFileRequest;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
+use App\Services\TaskService;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -17,10 +23,11 @@ class TaskController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index($boardId)
+    protected $taskService;
+
+    public function __construct(TaskService $taskService)
     {
-        $tasks = Task::where('board_id', $boardId)->get(); // Good, retrieves tasks for the specified board
-        return view('boards.tasks.index', compact('tasks', 'boardId')); // Correct
+        $this->taskService = $taskService;
     }
 
     public function create($boardId)
@@ -30,192 +37,143 @@ class TaskController extends Controller
     
     public function store(StoreTaskRequest $request)
     {
-        // Check if this idempotency key has already been processed
-        if (Cache::has('idempotency_' . $request->idempotency_key)) {
-            return redirect()->route('boards.show', $request->input('board_id'))
-                             ->with('info', 'Task has already been created.');
+        // Retrieve the board
+        $board = Board::findOrFail($request->input('board_id'));
+
+        // Authorize the user to add tasks to the board
+        $this->authorize('view', $board);
+
+        // Call the service and get the response
+        $response = $this->taskService->createTask($board, $request->validated(), $request->idempotency_key);
+
+        // Check for errors
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $board->id)
+                             ->withErrors(['board_user' => $response['error']]);
         }
-    
-        // Retrieve the board_user_id associated with the authenticated user and the board
-        $boardUser = BoardUser::where('board_id', $request->input('board_id'))
-                               ->where('user_id', auth()->id())
-                               ->first();
-    
-        if (!$boardUser) {
-            return redirect()->route('boards.show', $request->input('board_id'))
-                             ->withErrors(['board_user' => 'You are not authorized to add tasks to this board.']);
+
+        // Check for warnings
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $board->id)
+                             ->with('warning', $response['warning']);
         }
-    
-        // Create the task using mass assignment
-        $task = Task::create([
-            'name' => $request->input('name'),
-            'description' => $request->input('description'),
-            'due' => $request->input('due'),
-            'priority' => $request->input('priority'),
-            'progress' => $request->input('progress'),
-            'tag' => $request->input('tag'),
-            'board_id' => $request->input('board_id'),
-            'board_user_id' => $boardUser->id,
-        ]);
-    
-        // Store the idempotency key in the cache to prevent duplicate processing
-        Cache::put('idempotency_' . $request->idempotency_key, true, 86400); // Store for 24 hours
-    
-        return redirect()->route('boards.show', $request->input('board_id'))
-                         ->with('success', 'Task created successfully.');
+        
+        // If successful
+        return redirect()->route('boards.show', $board->id)
+                         ->with('success', $response['success']);
     }
-    
-    
-    
     
     public function show($boardId, $taskId)
     {
-        $task = Task::with('media')->findOrFail($taskId); // Load the task with its attachments
-        $board = Board::findOrFail($boardId); // Fetch the board based on the boardId
-    
+        $taskDetails = $this->taskService->getTaskDetails($boardId, $taskId);
+
         return view('boards.tasks.show', [
-            'task' => $task,
-            'board' => $board, // Pass the board to the view
+            'task' => $taskDetails['task'],
+            'board' => $taskDetails['board'],
+            'attachments' => $taskDetails['attachments'],
             'boardId' => $boardId,
-            'attachments' => $task->media // Pass the attachments to the view
         ]);
     }
     
-    
     public function edit($boardId, $taskId)
     {
-        $task = Task::findOrFail($taskId); // Find task by ID
-        return view('boards.tasks.edit', compact('task', 'boardId')); // Pass the board ID as well
+        $task = $this->taskService->getEditableTask($taskId);
+    
+        return view('boards.tasks.edit', compact('task', 'boardId'));
     }
     
     public function update(UpdateTaskRequest $request, $boardId, $taskId)
     {
-        // Find the task by ID
-        $task = Task::findOrFail($taskId);
+        $response = $this->taskService->updateTask($taskId, $request->validated());
     
-        // Get validated data from the request
-        $validatedData = $request->validated();
-    
-        // Check if the progress is being updated
-        $progressChanged = $task->progress !== $validatedData['progress'];
-    
-        // Update the task
-        $task->update($validatedData);
-    
-        // Determine the message based on the progress change and source
-        $message = 'Task updated successfully.';
-        if ($progressChanged) {
-            switch ($validatedData['progress']) {
-                case 'to_do':
-                    $message = 'Task reopened successfully.';
-                    break;
-                case 'in_progress':
-                    $message = 'Task started successfully.';
-                    break;
-                case 'done':
-                    $message = 'Task completed successfully.';
-                    break;
-            }
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $boardId)
+                             ->withErrors(['task' => $response['error']]);
         }
     
-        // Redirect back to the specific task's detail page
-        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $taskId])
-                         ->with('success', $message);
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $boardId)
+                             ->with('warning', $response['warning']);
+        }
+    
+        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
+                         ->with('success', $response['success']);
     }
-    
-    
+
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
-        // $this->authorize('owner', $task);
+        $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'));
     
-        $taskName = $task->name;
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $task->board_id)
+                             ->withErrors(['task' => $response['error']]);
+        }
     
-        // Add media to task
-        $task->addMediaFromRequest('attachment')->toMediaCollection('attachments');
-    
-        // Redirect with boardId and taskId
         return to_route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
-            ->with('success', 'Successfully added an attachment to ' . $taskName . '.');
+            ->with('success', $response['success']);
     }
-    
     
 
     public function destroy($boardId, $taskId)
     {
-        // Find and delete the task
-        $task = Task::findOrFail($taskId);
-        $task->delete();
+        $response = $this->taskService->deleteTask($taskId);
     
-        // Redirect back to the board with the correct boardId
-        return redirect()->route('boards.show', ['id' => $boardId])->with('success', 'Task deleted successfully');
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', ['id' => $boardId])
+                             ->withErrors(['task' => $response['error']]);
+        }
+    
+        return redirect()->route('boards.show', ['id' => $boardId])
+                         ->with('success', $response['success']);
     }
     
-    
-
-
-// In app/Http/Controllers/TaskController.php
-
+    // js/destroy.js (Deleting a task from a board using the dropdown.)
     public function remove($id)
     {
         try {
-            $task = Task::findOrFail($id);
-
-            // Directly delete the task without authorization check
-            $task->delete();
-            return response()->json(['message' => 'Task removed successfully.']);
-            
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            $response = $this->taskService->deleteTaskAjax($id);
+            return response()->json(['message' => $response['success']]);      
+        }
+        catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Task not found.'], 404);
-        } catch (\Exception $e) {
+        } 
+        catch (AuthorizationException $e) {
+            return response()->json(['message' => 'This action is unauthorized.'], 403);
+        } 
+        catch (\Exception $e) {
             return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
 
-
-    public function updateStatus(Request $request, $taskId)
+    public function updateStatus(UpdateTaskStatusRequest $request, $taskId)
     {
-        $task = Task::findOrFail($taskId);
-        
-        $request->validate([
-            'progress' => 'required|string|in:to_do,in_progress,done',
-        ]);
-        
-        $task->progress = $request->input('progress');
-        $task->save();
-        
-        return response()->json(['success' => true, 'message' => 'Task status updated']);
+        try {
+            $response = $this->taskService->updateTaskStatus($taskId, $request->input('progress'));
+            return response()->json($response);
+        } 
+        catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Task not found.'], 404);
+        } 
+        catch (AuthorizationException $e) {
+            return response()->json(['message' => 'This action is unauthorized.'], 403);
+        } 
+        catch (\Exception $e) {
+            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
-
-    // public function destroyFile($boardId, $taskId, $attachmentId)
-    // {
-    //     // Fetch the task by ID
-    //     $task = Task::findOrFail($taskId);
-        
-    //     // Check if the user is authorized (assuming you're using the 'owner' method)
-    //     $this->authorize('owner', $task);
     
-    //     // Find the attachment and delete it
-    //     if ($attachmentItem = $task->media()->find($attachmentId)) {
-    //         $attachmentItem->delete();
-    //     } else {
-    //         return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $taskId])
-    //                          ->with('error', 'Attachment item not found.');
-    //     }
-    
-    //     return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $taskId])
-    //                      ->with('success', 'Attachment deleted successfully');
-    // }
 
     public function destroyFile(Task $task, $attachmentId)
-    {  
-        // $this->authorize('owner', $task);
+    {
+        $response = $this->taskService->deleteAttachment($task, $attachmentId);
 
-        $media = $task->getMedia('attachments')->find($attachmentId);
-        if ($media) {
-            $media->delete();
+        if (isset($response['error'])) {
+            return redirect()->back()->withErrors(['attachment' => $response['error']]);
         }
-        return redirect()->back()->with('success', 'Attachment deleted successfully.');
+    
+        return redirect()->back()->with('success', $response['message']);
     }
-        
+    
+
 
 }

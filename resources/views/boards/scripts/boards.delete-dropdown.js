@@ -13,9 +13,11 @@ document.addEventListener("DOMContentLoaded", function () {
             var taskId = this.getAttribute("data-task-id");
             var dropdown = document.getElementById("dropdown-" + taskId);
 
-            closeAllDropdowns();
-
-            dropdown.classList.toggle("hidden");
+            if (dropdown) {
+                // Check if dropdown exists
+                closeAllDropdowns();
+                dropdown.classList.toggle("hidden");
+            }
         });
     });
 
