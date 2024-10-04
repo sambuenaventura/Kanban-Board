@@ -83,10 +83,8 @@ class TaskController extends Controller
     
     public function edit($boardId, $taskId)
     {
-        $task = Task::findOrFail($taskId);
-
-        $this->authorize('isOwnerOrCollaborator', $task);
-
+        $task = $this->taskService->getEditableTask($taskId);
+    
         return view('boards.tasks.edit', compact('task', 'boardId'));
     }
     
