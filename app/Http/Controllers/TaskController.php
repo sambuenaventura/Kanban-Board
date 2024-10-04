@@ -90,39 +90,20 @@ class TaskController extends Controller
     
     public function update(UpdateTaskRequest $request, $boardId, $taskId)
     {
-        // Find the task by ID
-        $task = Task::findOrFail($taskId);
-        
-        $this->authorize('isOwnerOrCollaborator', $task);
-
-        // Get validated data from the request
-        $validatedData = $request->validated();
+        $response = $this->taskService->updateTask($taskId, $request->validated());
     
-        // Check if the progress is being updated
-        $progressChanged = $task->progress !== $validatedData['progress'];
-    
-        // Update the task
-        $task->update($validatedData);
-    
-        // Determine the message based on the progress change and source
-        $message = 'Task updated successfully.';
-        if ($progressChanged) {
-            switch ($validatedData['progress']) {
-                case 'to_do':
-                    $message = 'Task reopened successfully.';
-                    break;
-                case 'in_progress':
-                    $message = 'Task started successfully.';
-                    break;
-                case 'done':
-                    $message = 'Task completed successfully.';
-                    break;
-            }
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $boardId)
+                             ->withErrors(['task' => $response['error']]);
         }
     
-        // Redirect back to the specific task's detail page
-        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $taskId])
-                         ->with('success', $message);
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $boardId)
+                             ->with('warning', $response['warning']);
+        }
+    
+        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
+                         ->with('success', $response['success']);
     }
     
     
