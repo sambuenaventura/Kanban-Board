@@ -181,6 +181,20 @@ class TaskService
         ];
     }
 
+    public function deleteTask($taskId)
+    {
+        $task = $this->taskModel->findOrFail($taskId);
+
+        $this->authorizeUserForTask($task, auth()->user());
+
+        $task->delete();
+
+        return [
+            'success' => 'Task deleted successfully.',
+            'taskId' => $taskId,
+        ];
+    }
+    
     public function isIdempotencyKeyUsed($idempotencyKey)
     {
         return Cache::has('idempotency_' . $idempotencyKey);
