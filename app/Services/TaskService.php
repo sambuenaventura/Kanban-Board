@@ -134,6 +134,41 @@ class TaskService
         return $task;
     }
 
+    public function updateTask($taskId, array $data)
+    {
+        // Find the task by ID
+        $task = Task::findOrFail($taskId);
+    
+        $this->authorizeUserForTask($task, auth()->user());
+
+        // Check if the progress is being updated
+        $progressChanged = $task->progress !== $data['progress'];
+    
+        // Update the task
+        $task->update($data);
+    
+        // Determine the message based on the progress change
+        $message = 'Task updated successfully.';
+        if ($progressChanged) {
+            switch ($data['progress']) {
+                case 'to_do':
+                    $message = 'Task reopened successfully.';
+                    break;
+                case 'in_progress':
+                    $message = 'Task started successfully.';
+                    break;
+                case 'done':
+                    $message = 'Task completed successfully.';
+                    break;
+            }
+        }
+        
+        return [
+            'success' => $message,
+            'task' => $task,
+        ];
+    }
+
     public function isIdempotencyKeyUsed($idempotencyKey)
     {
         return Cache::has('idempotency_' . $idempotencyKey);
