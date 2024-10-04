@@ -49,46 +49,25 @@ class TaskController extends Controller
         // Authorize the user to add tasks to the board
         $this->authorize('view', $board);
 
-        // Check if this idempotency key has already been processed
-        if (Cache::has('idempotency_' . $request->idempotency_key)) {
-            return redirect()->route('boards.show', $request->input('board_id'))
-                             ->with('warning', 'Task has already been created.');
+        // Call the service and get the response
+        $response = $this->taskService->createTask($board, $request->validated(), $request->idempotency_key);
+
+        // Check for errors
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', $board->id)
+                             ->withErrors(['board_user' => $response['error']]);
         }
-    
-        // Retrieve the board_user_id associated with the authenticated user and the board
-        $boardUser = BoardUser::where('board_id', $request->input('board_id'))
-                               ->where('user_id', auth()->id())
-                               ->first();
 
-
-        if (!$boardUser) {
-            return redirect()->route('boards.show', $request->input('board_id'))
-                             ->withErrors(['board_user' => 'You are not authorized to add tasks to this board.']);
+        // Check for warnings
+        if (isset($response['warning'])) {
+            return redirect()->route('boards.show', $board->id)
+                             ->with('warning', $response['warning']);
         }
-    
-        // Create the task using mass assignment
-        $task = Task::create([
-            'name' => $request->input('name'),
-            'description' => $request->input('description'),
-            'due' => $request->input('due'),
-            'priority' => $request->input('priority'),
-            'progress' => $request->input('progress'),
-            'tag' => $request->input('tag'),
-            'board_id' => $request->input('board_id'),
-            'board_user_id' => $boardUser->id,
-        ]);
-
-        broadcast(new BoardTaskCreated($task));
-    
-        // Store the idempotency key in the cache to prevent duplicate processing
-        Cache::put('idempotency_' . $request->idempotency_key, true, 86400); // Store for 24 hours
-    
-        return redirect()->route('boards.show', $request->input('board_id'))
-                         ->with('success', 'Task created successfully.');
+        
+        // If successful
+        return redirect()->route('boards.show', $board->id)
+                         ->with('success', $response['success']);
     }
-    
-    
-    
     
     public function show($boardId, $taskId)
     {
