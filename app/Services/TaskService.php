@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Events\BoardTaskCreated;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class TaskService
 {
@@ -59,6 +61,50 @@ class TaskService
         ];
     }
     
+    public function createTask(Board $board, array $data, string $idempotencyKey)
+    {
+        // Idempotency check (to prevent duplicate actions)
+        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
+            return ['warning' => 'Task has already been created.'];
+        }
+    
+        // Retrieve the board_user_id associated with the authenticated user and the board
+        $boardUser = $this->boardUserModel->where('board_id', $board->id)
+                                           ->where('user_id', auth()->id())
+                                           ->first();
+    
+        if (!$boardUser) {
+            return ['error' => 'You are not authorized to add tasks to this board.'];
+        }
+    
+        // Create the task using mass assignment
+        $task = $this->taskModel->create([
+            'name' => $data['name'],
+            'description' => $data['description'],
+            'due' => $data['due'],
+            'priority' => $data['priority'],
+            'progress' => $data['progress'],
+            'tag' => $data['tag'],
+            'board_id' => $board->id,
+            'board_user_id' => $boardUser->id,
+        ]);
 
+        broadcast(new BoardTaskCreated($task));
+    
+        // Store the idempotency key in the cache to prevent duplicate processing
+        $this->cacheIdempotencyKey($idempotencyKey);
+    
+        return ['success' => 'Task created successfully.', 'task' => $task];
+    }
+    
 
+    public function isIdempotencyKeyUsed($idempotencyKey)
+    {
+        return Cache::has('idempotency_' . $idempotencyKey);
+    }
+
+    public function cacheIdempotencyKey($idempotencyKey)
+    {
+        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
+    }
 }
