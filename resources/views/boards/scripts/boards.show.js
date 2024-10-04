@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    
-// Task Create Event
+    // Task Create Event
     window.Echo.channel("boards." + boardId).listen(".task.created", (e) => {
         console.log("New task created:", e.task);
         if (e.userId !== window.currentUserId) {
@@ -10,8 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    
-// Task Update Event
+    // Task Update Event
     window.Echo.channel("boards." + boardId).listen(".task.updated", (e) => {
         console.log("Task update received:", e);
         if (e.userId !== window.currentUserId) {
@@ -21,8 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
-// Task Delete Event
+    // Task Delete Event
     window.Echo.channel("boards." + boardId).listen(".task.deleted", (e) => {
         console.log("Task deleted:", e);
 
