@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const csrfToken = "{{ csrf_token() }}"; // Define CSRF token for usage in forms
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content"); // Get CSRF token from meta tag
+
+    // Generate a random idempotency key
+    function generateIdempotencyKey() {
+        return Math.random().toString(36).substring(2, 15);
+    }
 
     if (currentUserId) {
         window.Echo.channel(`user.${currentUserId}`)
@@ -25,27 +32,36 @@ document.addEventListener("DOMContentLoaded", () => {
             "flex flex-col sm:flex-row items-center justify-between p-6 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300";
         invitationElement.innerHTML = `
         <div class="mb-4 sm:mb-0 text-center sm:text-left">
-            <p class="font-bold text-xl text-gray-800 mb-1">${invitation.board.name}</p>
-            <p class="text-sm text-gray-600 mb-1">Invited by: <span class="font-semibold">${invitation.inviter.name}</span></p>
+            <p class="font-bold text-xl text-gray-800 mb-1">${
+                invitation.board.name
+            }</p>
+            <p class="text-sm text-gray-600 mb-1">Invited by: <span class="font-semibold">${
+                invitation.inviter.name
+            }</span></p>
             <p class="text-xs text-gray-500">Invited just now</p>
         </div>
         <div class="flex space-x-3">
-            <form action="/boards/invitations/${invitation.id}/accept" method="POST">
+            <form action="/boards/invitations/${
+                invitation.id
+            }/accept" method="POST">
                 <input type="hidden" name="_token" value="${csrfToken}">
+                <input type="hidden" name="idempotency_key" value="${generateIdempotencyKey()}">
                 <button type="submit" class="px-6 py-2 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 shadow-md hover:shadow-lg">
                     Accept
                 </button>
             </form>
-            <form action="/boards/invitations/${invitation.id}/decline" method="POST">
+            <form action="/boards/invitations/${
+                invitation.id
+            }/decline" method="POST">
                 <input type="hidden" name="_token" value="${csrfToken}">
+                <input type="hidden" name="idempotency_key" value="${generateIdempotencyKey()}">
                 <button type="submit" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md hover:shadow-lg">
                     Decline
                 </button>
             </form>
         </div>
-    `;
+        `;
 
-        // Append the new invitation
         invitationContainer.appendChild(invitationElement);
 
         // Remove the "no invitations" message if present
