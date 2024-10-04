@@ -169,6 +169,18 @@ class TaskService
         ];
     }
 
+    public function addAttachmentToTask(Task $task, $file)
+    {
+        $this->authorizeUserForTask($task, auth()->user());
+    
+        // Add media to task
+        $task->addMedia($file)->toMediaCollection('attachments');
+    
+        return [
+            'success' => 'Successfully added an attachment to ' . $task->name . '.',
+        ];
+    }
+
     public function isIdempotencyKeyUsed($idempotencyKey)
     {
         return Cache::has('idempotency_' . $idempotencyKey);
