@@ -30,12 +30,6 @@ class TaskController extends Controller
         $this->taskService = $taskService;
     }
 
-    public function index($boardId)
-    {
-        $tasks = Task::where('board_id', $boardId)->get();
-        return view('boards.tasks.index', compact('tasks', 'boardId'));
-    }
-
     public function create($boardId)
     {
         return view('boards.tasks.create', compact('boardId'));
@@ -170,15 +164,16 @@ class TaskController extends Controller
     
 
     public function destroyFile(Task $task, $attachmentId)
-    {  
-        $this->authorize('isOwnerOrCollaborator', $task);
+    {
+        $response = $this->taskService->deleteAttachment($task, $attachmentId);
 
-        $media = $task->getMedia('attachments')->find($attachmentId);
-        if ($media) {
-            $media->delete();
+        if (isset($response['error'])) {
+            return redirect()->back()->withErrors(['attachment' => $response['error']]);
         }
-        return redirect()->back()->with('success', 'Attachment deleted successfully.');
+    
+        return redirect()->back()->with('success', $response['message']);
     }
-        
+    
+
 
 }
