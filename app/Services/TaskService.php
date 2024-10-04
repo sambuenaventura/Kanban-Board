@@ -106,6 +106,24 @@ class TaskService
     }
     
 
+    public function getTaskDetails($boardId, $taskId)
+    {
+        // Fetch the task with media (attachments)
+        $task = $this->taskModel->with('media')->findOrFail($taskId);
+
+        $this->authorizeUserForTask($task, auth()->user());
+
+        // Fetch the board
+        $board = $this->boardModel->findOrFail($boardId);
+    
+        return [
+            'task' => $task,
+            'board' => $board,
+            'attachments' => $task->media,
+            'boardId' => $boardId,
+        ];
+    }
+
     public function isIdempotencyKeyUsed($idempotencyKey)
     {
         return Cache::has('idempotency_' . $idempotencyKey);
