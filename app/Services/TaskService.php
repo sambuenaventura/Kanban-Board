@@ -240,6 +240,28 @@ class TaskService
     
     }
     
+    public function deleteAttachment(Task $task, $attachmentId)
+    {
+        $this->authorizeUserForTask($task, auth()->user());
+    
+        // Find the media by attachment ID
+        $media = $task->getMedia('attachments')->find($attachmentId);
+    
+        // Check if media exists
+        if (!$media) {
+            return ['error' => 'Attachment not found.'];
+        }
+    
+        // Delete the media
+        $media->delete();
+    
+        return [
+            'success' => true,
+            'message' => 'Attachment deleted successfully.',
+        ];
+    }
+    
+    
     public function isIdempotencyKeyUsed($idempotencyKey)
     {
         return Cache::has('idempotency_' . $idempotencyKey);
