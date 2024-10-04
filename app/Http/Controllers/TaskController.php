@@ -122,17 +122,16 @@ class TaskController extends Controller
 
     public function destroy($boardId, $taskId)
     {
-        // Find and delete the task
-        $task = Task::findOrFail($taskId);
-
-        $this->authorize('isOwnerOrCollaborator', $task);
-        
-        $task->delete();
+        $response = $this->taskService->deleteTask($taskId);
     
-        // Redirect back to the board with the correct boardId
-        return redirect()->route('boards.show', ['id' => $boardId])->with('success', 'Task deleted successfully');
+        if (isset($response['error'])) {
+            return redirect()->route('boards.show', ['id' => $boardId])
+                             ->withErrors(['task' => $response['error']]);
+        }
+    
+        return redirect()->route('boards.show', ['id' => $boardId])
+                         ->with('success', $response['success']);
     }
-    
     
     // js/destroy.js (Deleting a task from a board using the dropdown.)
     public function remove($id)
