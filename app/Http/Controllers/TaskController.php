@@ -71,20 +71,15 @@ class TaskController extends Controller
     
     public function show($boardId, $taskId)
     {
-        $task = Task::with('media')->findOrFail($taskId); // Load the task with its attachments
+        $taskDetails = $this->taskService->getTaskDetails($boardId, $taskId);
 
-        $this->authorize('isOwnerOrCollaborator', $task);
-
-        $board = Board::findOrFail($boardId); // Fetch the board based on the boardId
-    
         return view('boards.tasks.show', [
-            'task' => $task,
-            'board' => $board, // Pass the board to the view
+            'task' => $taskDetails['task'],
+            'board' => $taskDetails['board'],
+            'attachments' => $taskDetails['attachments'],
             'boardId' => $boardId,
-            'attachments' => $task->media // Pass the attachments to the view
         ]);
     }
-    
     
     public function edit($boardId, $taskId)
     {
