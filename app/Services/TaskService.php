@@ -68,6 +68,14 @@ class TaskService
             return ['warning' => 'Task has already been created.'];
         }
     
+        // Check if a task with the same name already exists
+        $existingTask = $this->taskModel->where('name', $data['name'])
+                                         ->where('board_id', $board->id)
+                                         ->first();
+        if ($existingTask) {
+            return ['warning' => 'A task with this name already exists on this board.'];
+        }
+    
         // Retrieve the board_user_id associated with the authenticated user and the board
         $boardUser = $this->boardUserModel->where('board_id', $board->id)
                                            ->where('user_id', auth()->id())
@@ -88,7 +96,7 @@ class TaskService
             'board_id' => $board->id,
             'board_user_id' => $boardUser->id,
         ]);
-
+    
         broadcast(new BoardTaskCreated($task));
     
         // Store the idempotency key in the cache to prevent duplicate processing
