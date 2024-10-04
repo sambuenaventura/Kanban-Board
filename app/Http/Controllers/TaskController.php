@@ -137,28 +137,16 @@ class TaskController extends Controller
     public function remove($id)
     {
         try {
-            $task = Task::findOrFail($id);
-
-            // Check authorization before deleting the task
-            $this->authorize('isOwnerOrCollaborator', $task);
-
-            // Get the board ID before deleting the task
-            $boardId = $task->board_id;
-
-            // Directly delete the task
-            $task->delete();
-
-            // Dispatch the TaskDeleted event
-            broadcast(new BoardTaskDeleted($task->id, $boardId));
-
-            return response()->json(['message' => 'Task removed successfully.']);
-            
-        } catch (ModelNotFoundException $e) {
+            $response = $this->taskService->deleteTaskAjax($id);
+            return response()->json(['message' => $response['success']]);      
+        }
+        catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Task not found.'], 404);
-        } catch (AuthorizationException $e) {
-            // Return a JSON response with 403 status code
+        } 
+        catch (AuthorizationException $e) {
             return response()->json(['message' => 'This action is unauthorized.'], 403);
-        } catch (\Exception $e) {
+        } 
+        catch (\Exception $e) {
             return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
