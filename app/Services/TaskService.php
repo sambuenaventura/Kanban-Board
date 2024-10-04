@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Events\BoardTaskCreated;
 use App\Events\BoardTaskDeleted;
+use App\Events\BoardTaskUpdated;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
@@ -217,6 +218,26 @@ class TaskService
             'taskId' => $task->id,
             'boardId' => $boardId,
         ];
+    }
+
+    public function updateTaskStatus($id, $progress)
+    {
+        $task = $this->taskModel->findOrFail($id);
+
+        $this->authorizeUserForTask($task, auth()->user());
+
+        // Update the task progress
+        $task->progress = $progress;
+        $task->save();
+
+        // Dispatch the BoardTaskUpdated event
+        broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
+
+        return [
+            'success' => true,
+            'message' => 'Task status updated',
+        ];
+    
     }
     
     public function isIdempotencyKeyUsed($idempotencyKey)
