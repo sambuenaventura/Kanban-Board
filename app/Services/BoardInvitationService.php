@@ -145,7 +145,10 @@ class BoardInvitationService
     
         // Broadcast the updated invitation count
         broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-    
+
+        // Store the idempotency key in the cache
+        $this->cacheIdempotencyKey($idempotencyKey);
+        
         return ['success' => 'You have joined the board.'];
     }
 
