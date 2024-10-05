@@ -9,7 +9,6 @@
         </div>
     </x-slot>
 
-
     {{-- Content --}}
     <div class="flex flex-col h-[calc(100vh-13rem)]">
         <div x-data="{ showFilters: {{ count($selectedTags) > 0 ? 'true' : 'false' }} }" class="flex-grow overflow-hidden sm:px-6 lg:px-8">
@@ -17,9 +16,10 @@
                 <div class="h-full p-4 sm:p-6 text-gray-900 flex flex-col ">
                     
                     <div class="flex items-center mb-6 pb-4 border-b">
-                        <button @click="showFilters = !showFilters" class="flex-shrink-0 inline-flex items-center px-2 py-2 mr-2 border border-transparent rounded-md font-semibold text-xs text-gray-600 uppercase tracking-widest hover:bg-gray-200 focus:outline-none focus:border-gray-300 focus:ring focus:ring-gray-200 disabled:opacity-25">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18"></path>
+                        <!-- Filter Button -->
+                        <button onclick="toggleFilterModal()" class="mr-1 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                             </svg>
                         </button>
                         <div class="flex-grow min-w-0 mr-4">
@@ -52,30 +52,6 @@
 
                     {{-- Board --}}
                     <div class="flex gap-6 flex-col sm:flex-row flex-grow overflow-hidden">
-
-                        <!-- Filter Sidebar -->
-                        <div class="w-full sm:w-64 bg-gray-100 p-4 rounded-lg mb-4 sm:mb-0 overflow-y-auto" x-show="showFilters">
-                            <h3 class="text-lg font-semibold mb-4">Filter by tag</h3>
-                            <form id="filter-form" action="{{ route('boards.show', $board->id) }}" method="GET">
-                                @foreach($allTags as $tag)
-                                <ul class="mb-2">
-                                    <li>
-                                        <label class="inline-flex items-center mr-2 mb-2">
-                                            <input type="checkbox" name="tags[]" class="form-checkbox" value="{{ $tag }}"
-                                                {{ in_array($tag, $selectedTags) ? 'checked' : '' }}>
-                                            <span class="ml-2">{{ $tag }}</span>
-                                        </label>
-                                    </li>
-                                </ul>
-                                @endforeach
-                                <button type="button" onclick="applyFilters()" class="inline-flex items-center px-4 py-2 bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-600 active:bg-blue-700 focus:outline-none focus:border-blue-700 focus:ring focus:ring-blue-300 disabled:opacity-25 transition">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                                    </svg>
-                                    Apply
-                                </button>                            
-                            </form>
-                        </div>       
 
                         <!-- To Do Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
@@ -255,6 +231,14 @@
 
     ])
     
+    {{-- Filter Task Modal --}}
+    <x-task-modal 
+        :board="$board" 
+        :all-tags="$allTags" 
+        :selected-tags="$selectedTags" 
+        :selected-priority="$selectedPriority" 
+        modal-type="filter" 
+    />
     {{-- Add Task Modal --}}
     <x-task-modal :board="$board" modal-type="create" />
     
@@ -264,10 +248,10 @@
     <!-- Manage Collaborators Modal -->
     <x-task-modal 
         :board="$board" 
-        modal-type="manage-collaborator" 
         :collaborators="$collaborators" 
         :non-collaborators="$nonCollaborators" 
-        :pending-invitations="$pendingInvitations" 
+        :pending-invitations="$pendingInvitations"
+        modal-type="manage-collaborator" 
     />
 
 </x-app-layout>
