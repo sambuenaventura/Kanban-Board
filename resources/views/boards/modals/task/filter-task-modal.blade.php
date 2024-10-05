@@ -20,12 +20,16 @@
                                     <button onclick="clearAllFilters()" class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors duration-200">Clear All</button>
                                 </div>
                                 <div class="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar" id="tagContainer">
-                                    @foreach($allTags as $tag)
-                                    <label class="flex items-center bg-white rounded-full px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors duration-200 mb-2">
-                                        <input type="checkbox" name="tags[]" value="{{ $tag }}" {{ in_array($tag, $selectedTags) ? 'checked' : '' }} class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out mr-3">
-                                        {{ $tag }}
-                                    </label>
-                                    @endforeach
+                                    @if($allTags->isEmpty())
+                                        <p class="text-gray-600">No tags available.</p>
+                                    @else
+                                        @foreach($allTags as $tag)
+                                        <label class="flex items-center bg-white rounded-full px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors duration-200 mb-2">
+                                            <input type="checkbox" name="tags[]" value="{{ $tag }}" {{ in_array($tag, $selectedTags) ? 'checked' : '' }} class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out mr-3">
+                                            {{ $tag }}
+                                        </label>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
 
