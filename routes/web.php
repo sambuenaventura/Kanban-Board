@@ -27,11 +27,12 @@ Route::middleware('auth')->group(function () {
 
 Route::get('/auth/redirect', function() {
     return Socialite::driver('github')->redirect();
-});
+})->middleware('throttle:10,1');  // 10 requests per minute
 
-Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
+Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback'])->middleware('throttle:10,1');  // 10 requests per minute for the callback
 
-Route::middleware(['auth'])->group(function () {
+// 60 requests per minute
+Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     // Board user management and invitations routes
     Route::get('/boards/invitations', [BoardUserController::class, 'manageInvitations'])->name('boards.manageInvitations');
     Route::post('/boards/{board}/invite', [BoardUserController::class, 'inviteUserToBoard'])->name('boards.inviteUser');
@@ -68,11 +69,11 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/tasks/{task}/{attachment}/files', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('send-email',[TaskController::class, "sendEmail"]);
+    Route::get('/testroute', [NotificationController::class, 'sendEmail']);
+});
 
-Route::get('send-email',[TaskController::class, "sendEmail"]);
-
-
-Route::get('/testroute', [NotificationController::class, 'sendEmail']);
 
 Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
