@@ -5,47 +5,48 @@
         </h2>
     </x-slot>
 
-    <div class="flex flex-col pb-6">
-        <div class="flex-grow overflow-hidden sm:px-6 lg:px-8">
-            <div class="h-full bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="h-full p-4 sm:p-6 text-gray-900 flex flex-col">
-                    <div class="flex items-center mb-6 pb-4 border-b">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2 sm:mb-0">Pending Invitations</h1>
-                    </div>
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-6">Pending Invitations</h1>
                     
-                    <div id="invitation-container" class="space-y-4">
+                    <div id="invitation-container" class="space-y-6">
                         @forelse($pendingInvitations as $invitation)
-                            <div id="invitation-{{ $invitation->id }}" class="flex flex-col sm:flex-row items-center justify-between p-6 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-                                <div class="mb-4 sm:mb-0 text-center sm:text-left">
-                                    <p class="font-bold text-xl text-gray-800 mb-1">{{ $invitation->board->name }}</p>
-                                    <p class="text-sm text-gray-600 mb-1">Invited by: <span class="font-semibold">{{ $invitation->inviter->name }}</span></p>
-                                    <p class="text-xs text-gray-500">{{ $invitation->created_at->diffForHumans() }}</p>
-                                </div>
-                                <div class="flex space-x-3">
-                                    <form action="{{ route('boards.acceptInvitation', $invitation) }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
-                                        <button type="submit" class="px-6 py-2 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 shadow-md hover:shadow-lg">
-                                            Accept
-                                        </button>
-                                    </form>
-                                    <form action="{{ route('boards.declineInvitation', $invitation) }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
-                                        <button type="submit" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md hover:shadow-lg">
-                                            Decline
-                                        </button>
-                                    </form>
+                            <div id="invitation-{{ $invitation->id }}" class="bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+                                <div class="p-6">
+                                    <div class="flex flex-col sm:flex-row items-center justify-between">
+                                        <div class="mb-4 sm:mb-0 text-center sm:text-left">
+                                            <p class="font-bold text-2xl text-gray-800 mb-2">{{ $invitation->board->name }}</p>
+                                            <p class="text-sm text-gray-600 mb-1">Invited by: <span class="font-semibold">{{ $invitation->inviter->name }}</span></p>
+                                            <p class="text-xs text-gray-500">{{ $invitation->created_at->diffForHumans() }}</p>
+                                        </div>
+                                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                                            <form action="{{ route('boards.acceptInvitation', $invitation) }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
+                                                <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-colors duration-200">
+                                                    Accept
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('boards.declineInvitation', $invitation) }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
+                                                <button type="submit" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200">
+                                                    Decline
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         @empty
                         <div id="no-invitations-message" class="p-8 bg-gray-100 rounded-lg text-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" fill="#9CA3AF" class="mx-auto">
-                                <path d="M680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm67-105 28-28-75-75v-112h-40v128l87 87Zm-547 65q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v250q-18-13-38-22t-42-16v-212h-80v120H280v-120h-80v560h212q7 22 16 42t22 38H200Zm280-640q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
                             </svg>
                             <p class="mt-4 text-lg font-medium text-gray-600">You have no pending board invitations.</p>
                         </div>
-                        
                         @endforelse
                     </div>
                 </div>
