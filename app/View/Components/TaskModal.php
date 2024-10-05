@@ -16,14 +16,20 @@ class TaskModal extends Component
     public $collaborators; 
     public $nonCollaborators; 
     public $pendingInvitations; 
+    public $allTags; 
+    public $selectedTags; 
+    public $selectedPriority; 
 
-    public function __construct(string $modalType, $board = null, $collaborators = null, $nonCollaborators = null, $pendingInvitations = null)
+    public function __construct(string $modalType, $board = null, $collaborators = null, $nonCollaborators = null, $pendingInvitations = null, $allTags = null, $selectedTags = [], $selectedPriority = [])
     {
         $this->modalType = $modalType;
         $this->board = $board;
         $this->collaborators = $collaborators;
         $this->nonCollaborators = $nonCollaborators;
         $this->pendingInvitations = $pendingInvitations;
+        $this->allTags = $allTags;
+        $this->selectedTags = $selectedTags;
+        $this->selectedPriority = $selectedPriority;
     }
     
     
@@ -34,6 +40,14 @@ class TaskModal extends Component
     public function render(): View|Closure|string
     {
         // Boards>Modals>Task
+        if ($this->modalType === 'filter') {
+            return view('boards.modals.task.filter-task-modal', [
+                'board' => $this->board,
+                'allTags' => $this->allTags,
+                'selectedTags' => $this->selectedTags,
+                'selectedPriority' => $this->selectedPriority,
+            ]);
+        }
         if ($this->modalType === 'create') {
             return view('boards.modals.task.create-task-modal', ['board' => $this->board]);
         }
