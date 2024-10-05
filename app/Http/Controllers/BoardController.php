@@ -89,6 +89,13 @@ class BoardController extends Controller
             $tasks = $tasks;
         }
 
+        // Filter by priority (if selected)
+        $selectedPriority = $request->input('priority');
+
+        if (!empty($selectedPriority)) {
+            $tasks = $this->filterTasksByPriority($tasks, $selectedPriority);
+        }
+
         $toDoTasks = $this->taskService->getTaskByProgress($tasks, 'to_do');
         $inProgressTasks = $this->taskService->getTaskByProgress($tasks, 'in_progress');
         $doneTasks = $this->taskService->getTaskByProgress($tasks, 'done');
@@ -107,7 +114,8 @@ class BoardController extends Controller
             'allTags',
             'collaborators', 
             'nonCollaborators',
-            'pendingInvitations'
+            'pendingInvitations',
+            'selectedPriority'
         ));
     }
     // Method to handle tag selection
@@ -123,6 +131,11 @@ class BoardController extends Controller
         return $tasks->filter(function ($task) use ($selectedTags) {
             return in_array($task->tag, $selectedTags);
         });
+    }
+
+    protected function filterTasksByPriority($tasks, $selectedPriority)
+    {
+        return  $tasks->whereIn('priority', $selectedPriority);
     }
 
 
