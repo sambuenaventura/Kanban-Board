@@ -1,9 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const csrfToken = document
         .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content"); // Get CSRF token from meta tag
+        .getAttribute("content");
 
-    // Generate a random idempotency key
     function generateIdempotencyKey() {
         return Math.random().toString(36).substring(2, 15);
     }
@@ -25,46 +24,48 @@ document.addEventListener("DOMContentLoaded", () => {
             "invitation-container"
         );
 
-        // Create the invitation element
         const invitationElement = document.createElement("div");
         invitationElement.id = `invitation-${invitation.id}`;
         invitationElement.className =
-            "flex flex-col sm:flex-row items-center justify-between p-6 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300";
+            "bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden";
         invitationElement.innerHTML = `
-        <div class="mb-4 sm:mb-0 text-center sm:text-left">
-            <p class="font-bold text-xl text-gray-800 mb-1">${
-                invitation.board.name
-            }</p>
-            <p class="text-sm text-gray-600 mb-1">Invited by: <span class="font-semibold">${
-                invitation.inviter.name
-            }</span></p>
-            <p class="text-xs text-gray-500">Invited just now</p>
-        </div>
-        <div class="flex space-x-3">
-            <form action="/boards/invitations/${
-                invitation.id
-            }/accept" method="POST">
-                <input type="hidden" name="_token" value="${csrfToken}">
-                <input type="hidden" name="idempotency_key" value="${generateIdempotencyKey()}">
-                <button type="submit" class="px-6 py-2 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 shadow-md hover:shadow-lg">
-                    Accept
-                </button>
-            </form>
-            <form action="/boards/invitations/${
-                invitation.id
-            }/decline" method="POST">
-                <input type="hidden" name="_token" value="${csrfToken}">
-                <input type="hidden" name="idempotency_key" value="${generateIdempotencyKey()}">
-                <button type="submit" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md hover:shadow-lg">
-                    Decline
-                </button>
-            </form>
-        </div>
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between">
+                    <div class="mb-4 sm:mb-0 text-center sm:text-left">
+                        <p class="font-bold text-2xl text-gray-800 mb-2">${
+                            invitation.board.name
+                        }</p>
+                        <p class="text-sm text-gray-600 mb-1">Invited by: <span class="font-semibold">${
+                            invitation.inviter.name
+                        }</span></p>
+                        <p class="text-xs text-gray-500">Invited just now</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                        <form action="/boards/invitations/${
+                            invitation.id
+                        }/accept" method="POST">
+                            <input type="hidden" name="_token" value="${csrfToken}">
+                            <input type="hidden" name="idempotency_key" value="${generateIdempotencyKey()}">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-colors duration-200">
+                                Accept
+                            </button>
+                        </form>
+                        <form action="/boards/invitations/${
+                            invitation.id
+                        }/decline" method="POST">
+                            <input type="hidden" name="_token" value="${csrfToken}">
+                            <input type="hidden" name="idempotency_key" value="${generateIdempotencyKey()}">
+                            <button type="submit" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200">
+                                Decline
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         `;
 
         invitationContainer.appendChild(invitationElement);
 
-        // Remove the "no invitations" message if present
         const noInvitationsMessage = document.getElementById(
             "no-invitations-message"
         );
@@ -81,7 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
             invitationElement.remove();
         }
 
-        // Show the "no invitations" message if there are no more invitations
         const invitationContainer = document.getElementById(
             "invitation-container"
         );
@@ -91,11 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
             noInvitationsMessage.className =
                 "p-8 bg-gray-100 rounded-lg text-center";
             noInvitationsMessage.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" fill="#9CA3AF" class="mx-auto">
-                <path d="M680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm67-105 28-28-75-75v-112h-40v128l87 87Zm-547 65q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v250q-18-13-38-22t-42-16v-212h-80v120H280v-120h-80v560h212q7 22 16 42t22 38H200Zm280-640q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"/>
-            </svg>
-            <p class="mt-4 text-lg font-medium text-gray-600">You have no pending board invitations.</p>
-        `;
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+                </svg>
+                <p class="mt-4 text-lg font-medium text-gray-600">You have no pending board invitations.</p>
+            `;
             invitationContainer.appendChild(noInvitationsMessage);
         }
     }

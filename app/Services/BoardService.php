@@ -32,7 +32,7 @@ class BoardService
         return $this->boardModel->with(['user', 'tasks', 'boardUsers'])
                                 ->withCount(['tasks', 'boardUsers'])
                                 ->where('user_id', $userId)
-                                ->get();
+                                ->paginate(9, ['*'], 'page');  // Using 'page' as the query parameter
     }
 
     public function getCollaboratedBoards($userId)
@@ -42,7 +42,7 @@ class BoardService
                                 ->whereHas('collaborators', function ($query) use ($userId) {
                                     $query->where('users.id', $userId);
                                 })
-                                ->get();
+                                ->paginate(9, ['*'], 'collaborated_page');  // Using 'collaborated_page' as the query parameter
     }
 
     public function addTaskCountsToBoards($boards)

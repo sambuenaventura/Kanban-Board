@@ -730,8 +730,9 @@ class BoardControllerTest extends TestCase
         $response->assertStatus(200);
     
         // Assert the filter section exists
-        $response->assertSee('Filter by tag'); // Check that the filter title is visible
-        $response->assertSee('Apply'); // Check for the apply button
+        $response->assertSee('Filter Tasks');
+        $response->assertSee('Select Tags');
+        $response->assertSee('No tags available.');
     
         // Assert that there are no checkboxes rendered for tags
         $response->assertDontSee('<input type="checkbox" name="tags[]"'); // This checks if checkbox inputs for tags are not present

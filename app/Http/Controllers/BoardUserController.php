@@ -119,11 +119,11 @@ class BoardUserController extends Controller
         $response = $this->boardInvitationService->declineInvitation($invitation, $request->idempotency_key);
     
         if (isset($response['error'])) {
-            return redirect()->route('dashboard')->withErrors(['user' => $response['error']]);
+            return redirect()->route('boards.index')->withErrors(['user' => $response['error']]);
         }
 
         if (isset($response['warning'])) {
-            return redirect()->route('dashboard')->with('warning', $response['warning']);
+            return redirect()->route('boards.index')->with('warning', $response['warning']);
         }
 
         return redirect()->route('boards.index')->with('success', $response['success']);
