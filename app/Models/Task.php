@@ -25,7 +25,11 @@ class Task extends Model implements HasMedia
         'tag',
         'attachment',
     ];
-
+    
+    protected $casts = [
+        'due' => 'datetime',
+    ];
+    
     public function board()
     {
         return $this->belongsTo(Board::class);
