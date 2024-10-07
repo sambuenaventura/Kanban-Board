@@ -45,6 +45,19 @@
                                     @endforeach
                                 </div>
                             </div>
+
+                            <!-- Due Section -->
+                            <div class="mb-6">
+                                <span class="text-lg font-semibold text-gray-800 block mb-3">Filter by Due Date</span>
+                                <div class="flex space-x-4">
+                                    @foreach(['overdue', 'today', 'soon'] as $dueOption)
+                                    <label class="flex items-center">
+                                        <input type="radio" name="due" value="{{ $dueOption }}" {{ $selectedDue == $dueOption ? 'checked' : '' }} class="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out">
+                                        <span class="ml-2 text-sm font-medium text-gray-700 capitalize">{{ $dueOption }}</span>
+                                    </label>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
