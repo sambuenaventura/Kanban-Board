@@ -121,6 +121,13 @@ class BoardInvitationService
         if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
             return ['warning' => 'This action has already been processed.'];
         }
+
+        // Check if the invitation is already accepted
+        if ($invitation->status === 'accepted') {
+            return [
+                'error' => 'This invitation has already been accepted.'
+            ];
+        }
     
         // Ensure the authenticated user is the invitee
         if ($invitation->user_id !== auth()->id()) {
