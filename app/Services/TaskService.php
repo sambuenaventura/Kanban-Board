@@ -143,13 +143,19 @@ class TaskService
     public function updateTask($taskId, array $data)
     {
         // Find the task by ID
-        $task = Task::findOrFail($taskId);
+        $task = Task::find($taskId);
+    
+        if (!$task) {
+            return [
+                'error' => 'Task not found.',
+            ];
+        }
     
         $this->authorizeUserForTask($task, auth()->user());
-
-        // Check if the progress is being updated
-        $progressChanged = $task->progress !== $data['progress'];
     
+        // Check if the progress is being updated
+        $progressChanged = $task->progress !== ($data['progress'] ?? null);
+        
         // Update the task
         $task->update($data);
     
@@ -168,12 +174,13 @@ class TaskService
                     break;
             }
         }
-        
+    
         return [
             'success' => $message,
             'task' => $task,
         ];
     }
+    
 
     public function addAttachmentToTask(Task $task, $file)
     {
