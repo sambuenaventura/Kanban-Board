@@ -63,10 +63,11 @@ class BoardController extends Controller
     }
 
 
-    public function show($id, Request $request, Board $board)
+    public function show($id, Request $request)
     {
-        $board = Board::with('tasks', 'collaborators')->findOrFail($id);
-    
+        // Fetch the board and its tasks and collaborators using the board service
+        $board = $this->boardService->getBoardWithTasksAndCollaborators($id);
+
         $this->authorize('view', $board);
     
         $tasks = $this->taskService->getUserTasks($board);
