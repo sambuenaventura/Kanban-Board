@@ -32,20 +32,12 @@ class TaskService
                                ->pluck('tag')            
                                ->filter();            
     }
-    
+
     public function getUserTasks($board)
     {
-        if ($board->user_id === Auth::id()) {
-            return $board->tasks;
-        }
-
-        if ($board->collaborators->contains(Auth::id())) {
-            return $board->tasks;
-        }
-
-        return collect();
+        return $board->tasks;
     }
-
+    
     public function getTaskByProgress($tasks, $progress)
     {
         return $tasks->where('progress', $progress)
