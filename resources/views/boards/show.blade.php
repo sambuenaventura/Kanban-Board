@@ -58,51 +58,46 @@
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">To Do <span class="text-xs task-count">({{ $taskCounts['to_do'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="to_do">
                                 @foreach ($toDoTasks as $date => $tasksForDate)
-                                    <div class="mb-4">
-                                        <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
-                                        <ul class="space-y-3">
-                                            @foreach ($tasksForDate as $task)
-                                                <li class="bg-white p-4 rounded-lg shadow-sm cursor-move relative transition duration-300 ease-in-out transform hover:-translate-y-1" draggable="true" data-task-id="{{ $task->id }}">
-                                                    @if ($task->due_day)
-                                                        <div class="bg-red-400 text-white text-xs font-bold py-1 px-2 rounded flex items-center absolute top-0 left-0">
-                                                            <span class="material-symbols-outlined text-sm mr-1">event</span>
-                                                            {{ $task->due_day }}
-                                                        </div>
-                                                    @endif
-                                                    <div class="flex items-center justify-between {{ $task->due_day ? 'mt-6' : '' }}">
-                                                        <div class="inline-block">
-                                                            <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="inline group">
-                                                                <span class="text-gray-700 hover:text-blue-600 transition-all duration-200">{{ $task->name }}</span>
-                                                            </a>
-                                                        </div>
-                                                        <div class="flex items-center space-x-2 flex-shrink-0">
-                                                            <span class="px-2 py-1 text-xs font-semibold text-yellow-700 {{ $task->priority === 'high' ? 'bg-red-200' : ($task->priority === 'medium' ? 'bg-orange-200' : 'bg-yellow-200') }} rounded-full whitespace-nowrap">
-                                                                {{ $task->formatted_priority }}
-                                                            </span>
-                                                            <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-200 rounded-full whitespace-nowrap">
-                                                                {{ $task->tag }}
-                                                            </span>
-                                                            <div class="relative flex items-center">
-                                                                <span class="material-symbols-outlined cursor-pointer toggle-dropdown" data-task-id="{{ $task->id }}">
-                                                                    more_vert
-                                                                </span>
-                                                            </div>
-                                                        </div>
+                                <div class="mb-6">
+                                    <h5 class="flex items-center text-sm font-semibold text-gray-600 mb-3">
+                                        <span class="material-symbols-outlined text-gray-400 text-lg mr-1">schedule</span>
+                                        <span class="text-gray-600">Due: {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}</span>
+                                    </h5>
+                                    
+                                    
+                                    <ul class="space-y-4">
+                                        @foreach ($tasksForDate as $task)
+                                        <li class="bg-white rounded-lg shadow-sm cursor-move relative transition duration-300 ease-in-out transform hover:-translate-y-1 overflow-hidden" draggable="true" data-task-id="{{ $task->id }}">
+                                            <div class="p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="text-md font-medium text-gray-800 hover:text-blue-600 transition-all duration-200">{{ $task->name }}</a>
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="px-2 py-1 text-xs font-semibold {{ $task->priority === 'high' ? 'text-red-700 bg-red-100' : ($task->priority === 'medium' ? 'text-orange-700 bg-orange-100' : 'text-yellow-700 bg-yellow-100') }} rounded-full">
+                                                            {{ ucfirst($task->priority) }}
+                                                        </span>
+                                                        <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                                                            {{ $task->tag }}
+                                                        </span>
                                                     </div>
-                                                    <div class="relative">
-                                                        <div id="dropdown-{{ $task->id }}" class="absolute right-0 mt-2 w-24 bg-white rounded-md shadow-lg z-10 hidden">
-                                                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 confirm-remove" data-task-id="{{ $task->id }}">Remove?</a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                    {{-- @empty
-                                    <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
-                                        <p class="text-gray-600 text-lg">No tasks in the To Do column.</p>
-                                    </div>                                     --}}
-                                @endforeach                            
+                                                </div>
+                                            </div>
+                                            @if($task->is_overdue || $task->is_due_today || $task->is_due_soon)
+                                            <div class="w-full h-1 {{ $task->is_overdue ? 'bg-red-500' : ($task->is_due_today ? 'bg-yellow-500' : 'bg-orange-500') }}"></div>
+                                            <div class="px-4 py-2 {{ $task->is_overdue ? 'bg-red-50 text-red-700' : ($task->is_due_today ? 'bg-yellow-50 text-yellow-700' : 'bg-orange-50 text-orange-700') }} text-sm font-medium">
+                                                    @if($task->is_overdue)
+                                                        Overdue
+                                                    @elseif($task->is_due_today)
+                                                        Due Today
+                                                    @elseif($task->is_due_soon)
+                                                        Due Soon
+                                                    @endif                                                    
+                                                </div>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                    </ul>
+                                </div>
+                                @endforeach
                             </div>
                         </div>
 
@@ -111,106 +106,85 @@
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">In Progress <span class="text-xs task-count">({{ $taskCounts['in_progress'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="in_progress">
                                 @foreach ($inProgressTasks as $date => $tasksForDate)
-                                    <div class="mb-4">
-                                        <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
-                                        <ul class="space-y-3">
-                                            @foreach ($tasksForDate as $task)
-                                                <li class="bg-white p-4 rounded-lg shadow-sm cursor-move relative transition duration-300 ease-in-out transform hover:-translate-y-1" draggable="true" data-task-id="{{ $task->id }}">
-                                                    @if ($task->due_day)
-                                                        <div class="bg-red-400 text-white text-xs font-bold py-1 px-2 rounded flex items-center absolute top-0 left-0">
-                                                            <span class="material-symbols-outlined text-sm mr-1">event</span>
-                                                            {{ $task->due_day }}
-                                                        </div>
-                                                    @endif
-                                                    <div class="flex items-center justify-between {{ $task->due_day ? 'mt-6' : '' }}">
-                                                        <div class="inline-block">
-                                                            <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="inline group">
-                                                                <span class="text-gray-700 hover:text-blue-600 transition-all duration-200">{{ $task->name }}</span>
-                                                            </a>
-                                                        </div>
-                                                        <div class="flex items-center space-x-2 flex-shrink-0">
-                                                            <span class="px-2 py-1 text-xs font-semibold text-yellow-700 {{ $task->priority === 'high' ? 'bg-red-200' : ($task->priority === 'medium' ? 'bg-orange-200' : 'bg-yellow-200') }} rounded-full whitespace-nowrap">
-                                                                {{ $task->formatted_priority }}
-                                                            </span>
-                                                            <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-200 rounded-full whitespace-nowrap">
-                                                                {{ $task->tag }}
-                                                            </span>
-                                                            <div class="relative flex items-center">
-                                                                <span class="material-symbols-outlined cursor-pointer toggle-dropdown" data-task-id="{{ $task->id }}">
-                                                                    more_vert
-                                                                </span>
-                                                            </div>
-                                                        </div>
+                                <div class="mb-6">
+                                    <h5 class="flex items-center text-sm font-semibold text-gray-600 mb-3">
+                                        <span class="material-symbols-outlined text-gray-400 text-lg mr-1">schedule</span>
+                                        <span class="text-gray-600">Due: {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}</span>
+                                    </h5>
+
+                                    <ul class="space-y-4">
+                                        @foreach ($tasksForDate as $task)
+                                        <li class="bg-white rounded-lg shadow-sm cursor-move relative transition duration-300 ease-in-out transform hover:-translate-y-1 overflow-hidden" draggable="true" data-task-id="{{ $task->id }}">
+                                            <div class="p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="text-md font-medium text-gray-800 hover:text-blue-600 transition-all duration-200">{{ $task->name }}</a>
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="px-2 py-1 text-xs font-semibold {{ $task->priority === 'high' ? 'text-red-700 bg-red-100' : ($task->priority === 'medium' ? 'text-orange-700 bg-orange-100' : 'text-yellow-700 bg-yellow-100') }} rounded-full">
+                                                            {{ ucfirst($task->priority) }}
+                                                        </span>
+                                                        <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                                                            {{ $task->tag }}
+                                                        </span>
                                                     </div>
-                                                    <div class="relative">
-                                                        <div id="dropdown-{{ $task->id }}" class="absolute right-0 mt-2 w-24 bg-white rounded-md shadow-lg z-10 hidden">
-                                                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 confirm-remove" data-task-id="{{ $task->id }}">Remove?</a>
-                                                        </div>
-                                                    </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                    {{-- @empty
-                                    <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
-                                        <p class="text-gray-600 text-lg">No tasks currently in progress.</p>
-                                    </div>                                     --}}
-                                @endforeach                     
+                                                </div>
+                                            </div>
+                                            @if($task->is_overdue || $task->is_due_today || $task->is_due_soon)
+                                                <div class="w-full h-1 {{ $task->is_overdue ? 'bg-red-500' : ($task->is_due_today ? 'bg-yellow-500' : 'bg-orange-500') }}"></div>
+                                                <div class="px-4 py-2 {{ $task->is_overdue ? 'bg-red-50 text-red-700' : ($task->is_due_today ? 'bg-yellow-50 text-yellow-700' : 'bg-orange-50 text-orange-700') }} text-sm font-medium">
+                                                    @if($task->is_overdue)
+                                                        Overdue
+                                                    @elseif($task->is_due_today)
+                                                        Due Today
+                                                    @elseif($task->is_due_soon)
+                                                        Due Soon
+                                                    @endif                                                    
+                                                </div>
+                                            @endif
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                @endforeach
                             </div>
                         </div>
+
 
                         <!-- Done Column -->
                         <div class="flex-1 bg-gray-100 rounded-lg overflow-hidden flex flex-col min-w-[300px]">
                             <h4 class="font-semibold text-center bg-gray-700 p-4 text-white uppercase">Done <span class="text-xs task-count">({{ $taskCounts['done'] }})</span></h4>
                             <div class="kanban-column p-4 flex-grow overflow-y-auto" data-column="done">
                                 @foreach ($doneTasks as $date => $tasksForDate)
-                                    <div class="mb-4">
-                                        <h5 class="text-sm font-semibold text-gray-600 mb-2">{{ \Carbon\Carbon::parse($date)->format('n/j/Y') }}</h5>
-                                        <ul class="space-y-3">
-                                            @foreach ($tasksForDate as $task)
-                                                <li class="bg-white p-4 rounded-lg shadow-sm cursor-move relative transition duration-300 ease-in-out transform hover:-translate-y-1" draggable="true" data-task-id="{{ $task->id }}">
-                                                    @if ($task->due_day)
-                                                        <div class="bg-red-400 text-white text-xs font-bold py-1 px-2 rounded flex items-center absolute top-0 left-0">
-                                                            <span class="material-symbols-outlined text-sm mr-1">event</span>
-                                                            {{ $task->due_day }}
-                                                        </div>
-                                                    @endif
-                                                    <div class="flex items-center justify-between {{ $task->due_day ? 'mt-6' : '' }}">
-                                                        <div class="inline-block">
-                                                            <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="inline group">
-                                                                <span class="text-gray-700 hover:text-blue-600 transition-all duration-200 strikethrough">{{ $task->name }}</span>
-                                                            </a>
-                                                        </div>
-                                                        <div class="flex items-center space-x-2 flex-shrink-0">
-                                                            <span class="px-2 py-1 text-xs font-semibold text-yellow-700 {{ $task->priority === 'high' ? 'bg-red-200' : ($task->priority === 'medium' ? 'bg-orange-200' : 'bg-yellow-200') }} rounded-full whitespace-nowrap">
-                                                                {{ $task->formatted_priority }}
-                                                            </span>
-                                                            <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-200 rounded-full whitespace-nowrap">
-                                                                {{ $task->tag }}
-                                                            </span>
-                                                            <div class="relative flex items-center">
-                                                                <span class="material-symbols-outlined cursor-pointer toggle-dropdown" data-task-id="{{ $task->id }}">
-                                                                    more_vert
-                                                                </span>
-                                                                <div class="relative">
-                                                                    <div id="dropdown-{{ $task->id }}" class="absolute right-0 mt-2 w-24 bg-white rounded-md shadow-lg z-10 hidden">
-                                                                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 confirm-remove z-10" data-task-id="{{ $task->id }}">Remove?</a>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                <div class="mb-6">
+                                    <h5 class="flex items-center text-sm font-semibold text-gray-600 mb-3">
+                                        <span class="material-symbols-outlined text-gray-400 text-lg mr-1">schedule</span>
+                                        <span class="text-gray-600">Due: {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}</span>
+                                    </h5>
+
+                                    <ul class="space-y-4">
+                                        @foreach ($tasksForDate as $task)
+                                        <li class="bg-white rounded-lg shadow-sm cursor-move relative transition duration-300 ease-in-out transform hover:-translate-y-1 overflow-hidden" draggable="true" data-task-id="{{ $task->id }}">
+                                            <div class="p-4">
+                                                <div class="flex items-center justify-between">
+                                                    <a href="{{ route('boards.tasks.show', ['boardId' => $board->id, 'taskId' => $task->id]) }}" class="text-md font-medium text-gray-800 hover:text-blue-600 transition-all duration-200 strikethrough">{{ $task->name }}</a>
+                                                    <div class="flex items-center space-x-2">
+                                                        <span class="px-2 py-1 text-xs font-semibold {{ $task->priority === 'high' ? 'text-red-700 bg-red-100' : ($task->priority === 'medium' ? 'text-orange-700 bg-orange-100' : 'text-yellow-700 bg-yellow-100') }} rounded-full">
+                                                            {{ ucfirst($task->priority) }}
+                                                        </span>
+                                                        <span class="px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">
+                                                            {{ $task->tag }}
+                                                        </span>
                                                     </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                    {{-- @empty
-                                    <div class="col-span-full flex items-center justify-center h-full py-12 bg-white rounded-lg shadow-md border border-indigo-100">
-                                        <p class="text-gray-600 text-lg">No tasks in the Done column.</p>
-                                    </div>                                     --}}
+                                                </div>
+                                            </div>
+                                        </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                                 @endforeach
                             </div>
                         </div>
+
+
 
                     </div>
 
