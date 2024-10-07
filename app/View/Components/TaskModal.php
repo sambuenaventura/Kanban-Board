@@ -19,8 +19,9 @@ class TaskModal extends Component
     public $allTags; 
     public $selectedTags; 
     public $selectedPriority; 
+    public $selectedDue; 
 
-    public function __construct(string $modalType, $board = null, $collaborators = null, $nonCollaborators = null, $pendingInvitations = null, $allTags = null, $selectedTags = [], $selectedPriority = [])
+    public function __construct(string $modalType, $board = null, $collaborators = null, $nonCollaborators = null, $pendingInvitations = null, $allTags = null, $selectedTags = [], $selectedPriority = [], $selectedDue = [])
     {
         $this->modalType = $modalType;
         $this->board = $board;
@@ -30,6 +31,7 @@ class TaskModal extends Component
         $this->allTags = $allTags;
         $this->selectedTags = $selectedTags;
         $this->selectedPriority = $selectedPriority;
+        $this->selectedDue = $selectedDue;
     }
     
     
@@ -46,6 +48,7 @@ class TaskModal extends Component
                 'allTags' => $this->allTags,
                 'selectedTags' => $this->selectedTags,
                 'selectedPriority' => $this->selectedPriority,
+                'selectedDue' => $this->selectedDue,
             ]);
         }
         if ($this->modalType === 'create') {

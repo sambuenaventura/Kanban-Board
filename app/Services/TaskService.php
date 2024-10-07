@@ -32,27 +32,31 @@ class TaskService
                                ->pluck('tag')            
                                ->filter();            
     }
-    
+
     public function getUserTasks($board)
     {
-        if ($board->user_id === Auth::id()) {
-            return $board->tasks;
-        }
-
-        if ($board->collaborators->contains(Auth::id())) {
-            return $board->tasks;
-        }
-
-        return collect();
+        return $board->tasks;
     }
-
+    
     public function getTaskByProgress($tasks, $progress)
     {
         return $tasks->where('progress', $progress)
+                     ->map(function($task) {
+                         // Add a custom flag for overdue, due today, or due soon
+                         if ($task->due < Carbon::today()) {
+                             $task->is_overdue = true;
+                         } elseif ($task->due->isToday()) {
+                             $task->is_due_today = true;
+                         } elseif ($task->due->isBetween(Carbon::tomorrow(), Carbon::today()->addDays(3))) {
+                             $task->is_due_soon = true;
+                         }
+                         return $task;
+                     })
                      ->groupBy(function($task) {
                          return Carbon::parse($task->due)->format('Y-m-d');
                      })->sortKeys();
     }
+    
 
     public function getTaskCounts($tasks)
     {
@@ -139,13 +143,19 @@ class TaskService
     public function updateTask($taskId, array $data)
     {
         // Find the task by ID
-        $task = Task::findOrFail($taskId);
+        $task = Task::find($taskId);
+    
+        if (!$task) {
+            return [
+                'error' => 'Task not found.',
+            ];
+        }
     
         $this->authorizeUserForTask($task, auth()->user());
-
-        // Check if the progress is being updated
-        $progressChanged = $task->progress !== $data['progress'];
     
+        // Check if the progress is being updated
+        $progressChanged = $task->progress !== ($data['progress'] ?? null);
+        
         // Update the task
         $task->update($data);
     
@@ -164,12 +174,13 @@ class TaskService
                     break;
             }
         }
-        
+    
         return [
             'success' => $message,
             'task' => $task,
         ];
     }
+    
 
     public function addAttachmentToTask(Task $task, $file)
     {
@@ -179,7 +190,7 @@ class TaskService
         $task->addMedia($file)->toMediaCollection('attachments');
     
         return [
-            'success' => 'Successfully added an attachment to ' . $task->name . '.',
+            'success' => 'Attachment uploaded successfully.',
         ];
     }
 

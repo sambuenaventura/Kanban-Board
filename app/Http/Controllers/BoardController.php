@@ -12,6 +12,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\BoardService;
 use App\Services\TaskService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -63,10 +64,11 @@ class BoardController extends Controller
     }
 
 
-    public function show($id, Request $request, Board $board)
+    public function show($id, Request $request)
     {
-        $board = Board::with('tasks', 'collaborators')->findOrFail($id);
-    
+        // Fetch the board and its tasks and collaborators using the board service
+        $board = $this->boardService->getBoardWithTasksAndCollaborators($id);
+
         $this->authorize('view', $board);
     
         $tasks = $this->taskService->getUserTasks($board);
@@ -96,6 +98,12 @@ class BoardController extends Controller
             $tasks = $this->filterTasksByPriority($tasks, $selectedPriority);
         }
 
+        // Filter by due date
+        $selectedDue = $request->input('due');
+        if (!empty($selectedDue)) {
+            $tasks = $this->filterTasksByDue($tasks, $selectedDue);
+        }
+
         $toDoTasks = $this->taskService->getTaskByProgress($tasks, 'to_do');
         $inProgressTasks = $this->taskService->getTaskByProgress($tasks, 'in_progress');
         $doneTasks = $this->taskService->getTaskByProgress($tasks, 'done');
@@ -118,6 +126,7 @@ class BoardController extends Controller
             'selectedPriority'
         ));
     }
+
     // Method to handle tag selection
     protected function getSelectedTags(Request $request)
     {
@@ -133,11 +142,30 @@ class BoardController extends Controller
         });
     }
 
+    // Method to filter tasks by priority
     protected function filterTasksByPriority($tasks, $selectedPriority)
     {
         return  $tasks->whereIn('priority', $selectedPriority);
     }
+    
+    // Method to filter tasks by due
+    protected function filterTasksByDue($tasks, $selectedDue)
+    {
+        $today = Carbon::today();
 
+        return $tasks->filter(function ($task) use ($selectedDue, $today) {
+            switch ($selectedDue) {
+                case 'overdue':
+                    return $task->due < $today;
+                case 'today':
+                    return $task->due->isToday();
+                case 'soon':
+                    return $task->due->isBetween($today->addDay(), $today->copy()->addDays(3));
+                default:
+                    return true;
+            }
+        });
+    }
 
     public function edit($id)
     {

@@ -85,21 +85,21 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, $boardId, $taskId)
     {
         $response = $this->taskService->updateTask($taskId, $request->validated());
-    
+        
         if (isset($response['error'])) {
-            return redirect()->route('boards.show', $boardId)
+            return redirect()->route('boards.index')
                              ->withErrors(['task' => $response['error']]);
         }
-    
+        
         if (isset($response['warning'])) {
-            return redirect()->route('boards.show', $boardId)
+            return redirect()->route('boards.tasks.edit', ['boardId' => $boardId, 'taskId' => $taskId])
                              ->with('warning', $response['warning']);
         }
-    
+        
         return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
                          ->with('success', $response['success']);
     }
-
+    
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
         $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'));
@@ -112,7 +112,6 @@ class TaskController extends Controller
         return to_route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
             ->with('success', $response['success']);
     }
-    
 
     public function destroy($boardId, $taskId)
     {
@@ -161,7 +160,6 @@ class TaskController extends Controller
             return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
-    
 
     public function destroyFile(Task $task, $attachmentId)
     {

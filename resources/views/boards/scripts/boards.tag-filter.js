@@ -8,38 +8,77 @@ document.addEventListener("DOMContentLoaded", () => {
             filterModal.style.display === "none" ? "block" : "none";
         if (filterModal.style.display === "block") {
             updateSelectedCount();
+            setInitialFilterState();
         }
     };
 
-    // Update the count of selected tags and priority
-    window.updateSelectedCount = function () {
-        const checkedBoxes = document.querySelectorAll(
-            'input[name="tags[]"]:checked'
-        );
-        const selectedTagsCount = checkedBoxes.length;
+    // Set initial state of filters based on URL parameters
+    function setInitialFilterState() {
+        const urlParams = new URLSearchParams(window.location.search);
 
-        // Check if any priority is selected
+        // Set tags
+        const tags = urlParams.get("tags");
+        if (tags) {
+            const tagArray = tags.split(",");
+            tagArray.forEach((tag) => {
+                const checkbox = document.querySelector(
+                    `input[name="tags[]"][value="${tag}"]`
+                );
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+
+        // Set priority
+        const priority = urlParams.get("priority");
+        if (priority) {
+            const priorityRadio = document.querySelector(
+                `input[name="priority"][value="${priority}"]`
+            );
+            if (priorityRadio) priorityRadio.checked = true;
+        }
+
+        // Set due date
+        const due = urlParams.get("due");
+        if (due) {
+            const dueRadio = document.querySelector(
+                `input[name="due"][value="${due}"]`
+            );
+            if (dueRadio) dueRadio.checked = true;
+        }
+
+        updateSelectedCount();
+    }
+
+    // Update the count of selected filters
+    window.updateSelectedCount = function () {
+        const selectedTagsCount = document.querySelectorAll(
+            'input[name="tags[]"]:checked'
+        ).length;
         const selectedPriorityCount = document.querySelector(
             'input[name="priority"]:checked'
         )
             ? 1
-            : 0; // Count as 1 if a priority is selected
-
-        const totalSelectedCount = selectedTagsCount + selectedPriorityCount;
+            : 0;
+        const selectedDueCount = document.querySelector(
+            'input[name="due"]:checked'
+        )
+            ? 1
+            : 0;
+        const totalSelectedCount =
+            selectedTagsCount + selectedPriorityCount + selectedDueCount;
         selectedCountElement.textContent = totalSelectedCount;
     };
 
-    // Clear all selected filters (tags and priority)
+    // Clear all selected filters (tags, priority, and due date)
     window.clearAllFilters = function () {
         const checkboxes = document.querySelectorAll('input[name="tags[]"]');
         checkboxes.forEach((checkbox) => (checkbox.checked = false));
-
-        // Clear priority selection
         const priorityRadios = document.querySelectorAll(
             'input[name="priority"]'
         );
         priorityRadios.forEach((radio) => (radio.checked = false));
-
+        const dueRadios = document.querySelectorAll('input[name="due"]');
+        dueRadios.forEach((radio) => (radio.checked = false));
         updateSelectedCount();
     };
 
@@ -51,26 +90,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedTags = Array.from(checkedBoxes).map(
             (checkbox) => checkbox.value
         );
-
-        // Get the selected priority from the radio buttons
         const selectedPriority = document.querySelector(
             'input[name="priority"]:checked'
+        )?.value;
+        const selectedDue = document.querySelector(
+            'input[name="due"]:checked'
         )?.value;
 
         const boardId = window.location.pathname.split("/")[2];
         let url = `/boards/${boardId}`;
+        const params = new URLSearchParams();
 
-        // Append tags to the URL if any are selected
         if (selectedTags.length > 0) {
-            url += `?tags=${encodeURIComponent(selectedTags.join(","))}`;
+            params.append("tags", selectedTags.join(","));
+        }
+        if (selectedPriority) {
+            params.append("priority", selectedPriority);
+        }
+        if (selectedDue) {
+            params.append("due", selectedDue);
         }
 
-        // Append priority to the URL if one is selected
-        if (selectedPriority) {
-            url +=
-                selectedTags.length > 0
-                    ? `&priority=${selectedPriority}`
-                    : `?priority=${selectedPriority}`;
+        if (params.toString()) {
+            url += `?${params.toString()}`;
         }
 
         console.log("Redirecting to:", url);
@@ -78,13 +120,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Update the count when filters change
-    document.querySelectorAll('input[name="tags[]"]').forEach((checkbox) => {
-        checkbox.addEventListener("change", updateSelectedCount);
-    });
-
-    document.querySelectorAll('input[name="priority"]').forEach((radio) => {
-        radio.addEventListener("change", updateSelectedCount);
-    });
+    document
+        .querySelectorAll(
+            'input[name="tags[]"], input[name="priority"], input[name="due"]'
+        )
+        .forEach((input) => {
+            input.addEventListener("change", updateSelectedCount);
+        });
 
     // Close modal when clicking outside of it
     window.onclick = function (event) {
@@ -92,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
             toggleFilterModal();
         }
     };
-
+    
     // Initial count update when the page loads
     updateSelectedCount();
 });

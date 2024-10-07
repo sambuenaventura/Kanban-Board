@@ -30,17 +30,23 @@ class BoardInvitationService
         if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
             return ['warning' => 'This action has already been processed.'];
         }
-
+    
+        // Check if the user is a collaborator before attempting to detach
+        if (!$board->users()->where('user_id', $user->id)->exists()) {
+            return ['error' => 'User is not a collaborator on this board.'];
+        }
+    
         // Detach the user from the board
         $board->users()->detach($user->id);
-
+    
         broadcast(new BoardRemoveCollaborator($user->id, $board->id));  
         
         // Store the idempotency key in the cache
         $this->cacheIdempotencyKey($idempotencyKey);
-
+    
         return ['success' => 'User removed from the board successfully.'];
     }
+    
 
     public function inviteUser($boardId, $userId, $idempotencyKey)
     {
@@ -115,6 +121,13 @@ class BoardInvitationService
         if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
             return ['warning' => 'This action has already been processed.'];
         }
+
+        // Check if the invitation is already accepted
+        if ($invitation->status === 'accepted') {
+            return [
+                'error' => 'This invitation has already been accepted.'
+            ];
+        }
     
         // Ensure the authenticated user is the invitee
         if ($invitation->user_id !== auth()->id()) {
@@ -157,6 +170,13 @@ class BoardInvitationService
         // Idempotency check (to prevent duplicate actions)
         if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
             return ['warning' => 'This action has already been processed.'];
+        }
+        
+        // Check if the invitation is already declined
+        if ($invitation->status === 'declined') {
+            return [
+                'error' => 'This invitation has already been declined.'
+            ];
         }
 
         // Ensure the authenticated user is the invitee
