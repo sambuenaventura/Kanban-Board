@@ -26,6 +26,11 @@ class BoardService
         $this->userModel = $userModel;
         $this->boardInvitationModel = $boardInvitationModel;
     }
+    
+    public function getBoardWithTasksAndCollaborators($id)
+    {
+        return $this->boardModel->with('tasks', 'collaborators')->findOrFail($id);
+    }
 
     public function getOwnedBoards($userId)
     {
