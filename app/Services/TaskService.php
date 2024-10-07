@@ -190,7 +190,7 @@ class TaskService
         $task->addMedia($file)->toMediaCollection('attachments');
     
         return [
-            'success' => 'Successfully added an attachment to ' . $task->name . '.',
+            'success' => 'Attachment uploaded successfully.',
         ];
     }
 
