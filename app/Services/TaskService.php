@@ -42,7 +42,7 @@ class TaskService
     {
         return $tasks->where('progress', $progress)
                      ->map(function($task) {
-                         // Add a custom flag for overdue, due today, or due soon
+                         // Custom flag for overdue, due today, or due soon
                          if ($task->due < Carbon::today()) {
                              $task->is_overdue = true;
                          } elseif ($task->due->isToday()) {
@@ -60,12 +60,29 @@ class TaskService
 
     public function getTaskCounts($tasks)
     {
-        return [
-            'to_do' => $tasks->where('progress', 'to_do')->count(),
-            'in_progress' => $tasks->where('progress', 'in_progress')->count(),
-            'done' => $tasks->where('progress', 'done')->count(),
+        $taskCounts = [
+            'to_do' => 0,
+            'in_progress' => 0,
+            'done' => 0,
         ];
+    
+        foreach ($tasks as $task) {
+            switch ($task->progress) {
+                case 'to_do':
+                    $taskCounts['to_do']++;
+                    break;
+                case 'in_progress':
+                    $taskCounts['in_progress']++;
+                    break;
+                case 'done':
+                    $taskCounts['done']++;
+                    break;
+            }
+        }
+    
+        return $taskCounts;
     }
+    
     
     public function createTask(Board $board, array $data, string $idempotencyKey)
     {
