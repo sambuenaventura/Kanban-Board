@@ -108,6 +108,12 @@ class TaskService
             return ['error' => 'You are not authorized to add tasks to this board.'];
         }
     
+        // Check the number of existing tasks for the board
+        $taskCount = $this->taskModel->where('board_id', $board->id)->count();
+        if ($taskCount >= 100) {
+            return ['error' => 'You have reached the maximum limit of 100 tasks for this board.'];
+        }
+    
         // Create the task using mass assignment
         $task = $this->taskModel->create([
             'name' => $data['name'],
