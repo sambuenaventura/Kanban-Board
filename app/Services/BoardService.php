@@ -87,6 +87,43 @@ class BoardService
         return $boards;
     }
 
+    public function sortCollaborators($boardUsers, $userId, $limit = 3)
+    {
+        $owner = null;
+        $authUser = null;
+        $otherCollaborators = [];
+    
+        foreach ($boardUsers as $user) {
+            if ($user->role === 'owner') {
+                $owner = $user;
+            } elseif ($user->user_id === $userId) {
+                $authUser = $user;
+            } else {
+                $otherCollaborators[] = $user;
+            }
+        }
+    
+        $sortedCollaborators = [];
+        if ($owner) {
+            $sortedCollaborators[] = $owner;
+        }
+        if ($authUser && $authUser !== $owner) {
+            $sortedCollaborators[] = $authUser;
+        }
+    
+        $remainingSlots = $limit - count($sortedCollaborators);
+        $sortedCollaborators = array_merge($sortedCollaborators, array_slice($otherCollaborators, 0, $remainingSlots));
+    
+        $remainingCount = count($boardUsers) - count($sortedCollaborators);
+    
+        if ($remainingCount > 0) {
+            $sortedCollaborators[] = ['remaining_count' => $remainingCount];
+        }
+    
+        return $sortedCollaborators;
+    }
+    
+
     public function createBoard(array $data)
     {
         $board = $this->boardModel->create([
