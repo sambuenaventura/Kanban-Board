@@ -36,12 +36,21 @@ class BoardController extends Controller
         $userId = Auth::id();
         $boardsOwned = $this->boardService->getOwnedBoards($userId);
         $boardsCollaborated = $this->boardService->getCollaboratedBoards($userId);
-        
-        // Add task counts to each board
+       
         $this->boardService->addTaskCountsToBoards($boardsOwned);
         $this->boardService->addTaskCountsToBoards($boardsCollaborated);
 
+        $this->sortCollaboratorsForBoards($boardsOwned, $userId);
+        $this->sortCollaboratorsForBoards($boardsCollaborated, $userId);
+    
         return view('boards.index', compact('boardsOwned', 'boardsCollaborated', 'userId'));
+    }
+
+    private function sortCollaboratorsForBoards($boards, $userId)
+    {
+        foreach ($boards as $board) {
+            $board->sortedCollaborators = $this->boardService->sortCollaborators($board->boardUsers, $userId);
+        }
     }
     
     public function create()
