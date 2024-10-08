@@ -32,22 +32,46 @@ class BoardService
         return $this->boardModel->with('tasks', 'collaborators')->findOrFail($id);
     }
 
+    public function getBoards($userId, $isOwner = true)
+    {
+        $query = $this->boardModel->with(['user', 'boardUsers.user'])
+            ->withCount(['tasks', 'boardUsers'])
+            ->withCount([
+                'tasks as overdue_tasks_count' => function ($query) {
+                    $query->where('due', '<', now())->where('progress', '!=', 'done');
+                },
+                'tasks as due_today_tasks_count' => function ($query) {
+                    $query->where('due', '=', now()->startOfDay())->where('progress', '!=', 'done');
+                },
+                'tasks as due_soon_tasks_count' => function ($query) {
+                    $query->where('due', '>', now()->endOfDay())
+                        ->where('due', '<=', now()->addWeek())
+                        ->where('progress', '!=', 'done');
+                },
+            ]);
+
+        if ($isOwner) {
+            // Filter by owner
+            $query->where('user_id', $userId);
+        } else {
+            // Filter by collaborators from boardUsers
+            $query->whereHas('boardUsers', function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->where('role', 'collaborator');
+            });
+        }
+    
+        return $query->paginate(6, ['*'], $isOwner ? 'owned_page' : 'collaborated_page');
+    }
+
     public function getOwnedBoards($userId)
     {
-        return $this->boardModel->with(['user', 'tasks', 'boardUsers'])
-                                ->withCount(['tasks', 'boardUsers'])
-                                ->where('user_id', $userId)
-                                ->paginate(9, ['*'], 'page');  // Using 'page' as the query parameter
+        return $this->getBoards($userId, true);
     }
 
     public function getCollaboratedBoards($userId)
     {
-        return $this->boardModel->with(['user', 'tasks', 'collaborators'])
-                                ->withCount(['tasks', 'boardUsers'])
-                                ->whereHas('collaborators', function ($query) use ($userId) {
-                                    $query->where('users.id', $userId);
-                                })
-                                ->paginate(9, ['*'], 'collaborated_page');  // Using 'collaborated_page' as the query parameter
+        return $this->getBoards($userId, false);
     }
 
     public function addTaskCountsToBoards($boards)
