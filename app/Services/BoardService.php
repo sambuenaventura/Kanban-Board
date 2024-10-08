@@ -76,9 +76,15 @@ class BoardService
 
     public function addTaskCountsToBoards($boards)
     {
-        return $boards->each(function ($board) {
-            $board->taskCounts = $this->taskModel->getTaskCounts($board->id);
-        });
+        foreach ($boards as $board) {
+            $board->taskCounts = [
+                'overdue' => $board->overdue_tasks_count,
+                'dueToday' => $board->due_today_tasks_count,
+                'dueSoon' => $board->due_soon_tasks_count,
+            ];
+        }
+
+        return $boards;
     }
 
     public function createBoard(array $data)
