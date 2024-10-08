@@ -123,7 +123,7 @@ class Task extends Model implements HasMedia
         $threeDaysFromNow = Carbon::today()->addDays(3);
         return $query->notDone()->whereBetween('due', [$tomorrow, $threeDaysFromNow]);
     }
-
+    
     public static function getTaskCounts($boardId)
     {
         return [
@@ -132,10 +132,5 @@ class Task extends Model implements HasMedia
             'dueSoon' => self::where('board_id', $boardId)->dueSoon()->count(),
         ];
     }
-    
-    
-    
-    
-    
-    
+
 }

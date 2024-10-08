@@ -36,7 +36,7 @@ class BoardController extends Controller
         $userId = Auth::id();
         $boardsOwned = $this->boardService->getOwnedBoards($userId);
         $boardsCollaborated = $this->boardService->getCollaboratedBoards($userId);
-
+        
         // Add task counts to each board
         $this->boardService->addTaskCountsToBoards($boardsOwned);
         $this->boardService->addTaskCountsToBoards($boardsCollaborated);
@@ -44,7 +44,6 @@ class BoardController extends Controller
         return view('boards.index', compact('boardsOwned', 'boardsCollaborated', 'userId'));
     }
     
-
     public function create()
     {
         return view('boards.create');
@@ -84,11 +83,8 @@ class BoardController extends Controller
     
         // Filter by tags
         $selectedTags = $this->getSelectedTags($request);
-
         if (!empty($selectedTags)) {
             $tasks = $this->filterTasksByTags($tasks, $selectedTags);
-        } else {
-            $tasks = $tasks;
         }
 
         // Filter by priority (if selected)

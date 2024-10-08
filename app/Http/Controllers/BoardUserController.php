@@ -29,40 +29,6 @@ class BoardUserController extends Controller
         $this->boardInvitationService = $boardInvitationService;
     }
 
-    // public function addUserToBoard(Request $request, $boardId)
-    // {
-
-    //     $board = Board::findOrFail($boardId);
-
-    //     // Authorize the action
-    //     $this->authorize('update', $board);
-
-    //     // Validate the request data
-    //     $request->validate([
-    //         'user_id' => 'required|exists:users,id',
-    //         'role' => 'required|string|in:collaborator', // Prevent assigning owner role here
-    //     ]);
-    
-    //     // Check if the user is already a member of the board
-    //     $existingBoardUser = BoardUser::where('board_id', $boardId)
-    //         ->where('user_id', $request->user_id)
-    //         ->first();
-
-    
-    //     if ($existingBoardUser) {
-    //         return redirect()->back()->withErrors(['user' => 'This user is already a member of the board.']);
-    //     }
-    
-    //     // Add the user to the board
-    //     BoardUser::create([
-    //         'board_id' => $boardId,
-    //         'user_id' => $request->user_id,
-    //         'role' => $request->role,
-    //     ]);
-    
-    //     return redirect()->route('boards.show', $boardId)->with('success', 'User added to the board successfully.');
-    // }
-
     public function removeUserFromBoard(Request $request, Board $board, User $user)
     {
         $this->authorize('owner', $board);
@@ -94,7 +60,6 @@ class BoardUserController extends Controller
     
         return redirect()->route('boards.show', $boardId)->with('success', $response['success']);
     }
-    
 
     public function acceptInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
     {
@@ -111,9 +76,6 @@ class BoardUserController extends Controller
         return redirect()->route('boards.show', $invitation->board_id)->with('success', $response['success']);
     }
     
-    
-    
-    
     public function declineInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
     {
         $response = $this->boardInvitationService->declineInvitation($invitation, $request->idempotency_key);
@@ -128,7 +90,6 @@ class BoardUserController extends Controller
 
         return redirect()->route('boards.index')->with('success', $response['success']);
     }
-    
     
     public function manageInvitations()
     {
