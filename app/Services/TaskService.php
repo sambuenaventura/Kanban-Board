@@ -41,22 +41,20 @@ class TaskService
     public function getTaskByProgress($tasks, $progress)
     {
         return $tasks->where('progress', $progress)
-                     ->map(function($task) {
-                         // Custom flag for overdue, due today, or due soon
+                     ->map(function ($task) {
                          if ($task->due < Carbon::today()) {
                              $task->is_overdue = true;
                          } elseif ($task->due->isToday()) {
                              $task->is_due_today = true;
-                         } elseif ($task->due->isBetween(Carbon::tomorrow(), Carbon::today()->addDays(3))) {
+                         } elseif ($task->due->isBetween(Carbon::tomorrow(), Carbon::today()->addWeek())) {
                              $task->is_due_soon = true;
                          }
                          return $task;
                      })
-                     ->groupBy(function($task) {
+                     ->groupBy(function ($task) {
                          return Carbon::parse($task->due)->format('Y-m-d');
                      })->sortKeys();
     }
-    
 
     public function getTaskCounts($tasks)
     {
@@ -82,7 +80,6 @@ class TaskService
     
         return $taskCounts;
     }
-    
     
     public function createTask(Board $board, array $data, string $idempotencyKey)
     {
@@ -133,7 +130,6 @@ class TaskService
     
         return ['success' => 'Task created successfully.', 'task' => $task];
     }
-    
 
     public function getTaskDetails($boardId, $taskId)
     {
@@ -203,7 +199,6 @@ class TaskService
             'task' => $task,
         ];
     }
-    
 
     public function addAttachmentToTask(Task $task, $file)
     {
