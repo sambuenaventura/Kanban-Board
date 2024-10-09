@@ -12,6 +12,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\BoardService;
 use App\Services\TaskService;
+use App\Traits\IdempotentRequest;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Cache;
 
 class BoardController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, IdempotentRequest;
 
     protected $boardService;
     protected $taskService;
@@ -190,41 +191,21 @@ class BoardController extends Controller
         return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
     }
     
-    
     public function destroy(Request $request, $id)
     {
-        // Check if the request is a duplicate using the idempotency key
-        if ($this->isAlreadyDeleted($request->idempotency_key)) {
-            return redirect()->route('boards.index')->with('warning', 'The board has already been deleted.');
-        }
-    
-        // Find the board only if it's not already deleted
-        $board = $this->findBoardOrFail($id);
-        
-        $this->authorize('delete', $board);
-    
-        // Proceed with deleting the board
-        $board->delete();
-    
-        // Cache the idempotency key to prevent future duplicate deletes
-        $this->cacheIdempotencyKey($request->idempotency_key);
-    
-        return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
+        return $this->processIdempotentRequest($request, "delete_board_{$id}", function () use ($id) {
+            $board = $this->findBoardOrFail($id);
+            
+            $this->authorize('delete', $board);
+
+            $board->delete();
+
+            return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
+        });
     }
     
-
     protected function findBoardOrFail($id)
     {
         return Board::findOrFail($id);
-    }
-    
-    protected function isAlreadyDeleted($idempotencyKey)
-    {
-        return Cache::has('idempotency_' . $idempotencyKey);
-    }
-
-    protected function cacheIdempotencyKey($idempotencyKey)
-    {
-        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
     }
 }
