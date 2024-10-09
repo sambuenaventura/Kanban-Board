@@ -91,6 +91,13 @@ class BoardUserController extends Controller
         return redirect()->route('boards.index')->with('success', $response['success']);
     }
     
+    public function manageInvitations()
+    {
+        $pendingInvitations = $this->boardInvitationService->getPendingInvitationsForUser(auth()->id());
+    
+        return view('boards.manage-invitations', compact('pendingInvitations'));
+    }
+    
     public function cancelInvitation(ProcessInvitationRequest $request, Board $board, $invitation)
     {
         // If $invitation is already a model instance, use it directly
@@ -123,4 +130,5 @@ class BoardUserController extends Controller
         return redirect()->route('boards.show', $board->id)->with('success', $response['success']);
     }
     
+
 }
