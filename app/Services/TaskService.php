@@ -17,12 +17,14 @@ class TaskService
     protected $taskModel;
     protected $boardModel;
     protected $boardUserModel;
+    protected $idempotencyService;
 
-    public function __construct(Task $taskModel, Board $boardModel, BoardUser $boardUserModel)
+    public function __construct(Task $taskModel, Board $boardModel, BoardUser $boardUserModel, IdempotencyService $idempotencyService)
     {
         $this->taskModel = $taskModel;
         $this->boardModel = $boardModel;
         $this->boardUserModel = $boardUserModel;
+        $this->idempotencyService = $idempotencyService;
     }
 
     public function getAllTags($board)
@@ -204,18 +206,18 @@ class TaskService
         ];
     }
 
-    public function deleteTask($taskId)
+    public function deleteTask(string $id, string $idempotencyKey)
     {
-        $task = $this->taskModel->findOrFail($taskId);
-
-        $this->authorizeUserForTask($task, auth()->user());
-
-        $task->delete();
-
-        return [
-            'success' => 'Task deleted successfully.',
-            'taskId' => $taskId,
-        ];
+        return $this->idempotencyService->process("delete_task_{$id}", $idempotencyKey, function () use ($id) 
+            {
+                $task = $this->taskModel->findOrFail($id);
+                $task->delete();
+                return [
+                    'status' => 'success',
+                    'message' => 'Task deleted successfully.',
+                ];
+            }
+        );
     }
     
     public function deleteTaskAjax($id)

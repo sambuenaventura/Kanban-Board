@@ -13,6 +13,7 @@ use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
 use App\Services\TaskService;
+use App\Traits\IdempotentRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Cache;
 
 class TaskController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, IdempotentRequest;
 
     protected $taskService;
 
@@ -112,18 +113,25 @@ class TaskController extends Controller
         return to_route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
             ->with('success', $response['success']);
     }
-
-    public function destroy($boardId, $taskId)
+    
+    public function destroy(Request $request, $boardId, $taskId)
     {
-        $response = $this->taskService->deleteTask($taskId);
-    
-        if (isset($response['error'])) {
+        $idempotencyKey = $request->input('idempotency_key');
+        
+        if (empty($idempotencyKey)) {
             return redirect()->route('boards.show', ['id' => $boardId])
-                             ->withErrors(['task' => $response['error']]);
+                             ->withErrors(['error' => 'Idempotency key is required.']);
         }
-    
+
+        $result = $this->taskService->deleteTask($taskId, $idempotencyKey);
+
+        if ($result['status'] === 'warning') {
+            return redirect()->route('boards.show', ['id' => $boardId])
+                             ->with('warning', $result['message']);
+        }
+
         return redirect()->route('boards.show', ['id' => $boardId])
-                         ->with('success', $response['success']);
+                         ->with('success', $result['message']);
     }
     
     // js/destroy.js (Deleting a task from a board using the dropdown.)
@@ -171,7 +179,5 @@ class TaskController extends Controller
     
         return redirect()->back()->with('success', $response['message']);
     }
-    
-
 
 }
