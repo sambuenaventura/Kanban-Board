@@ -193,19 +193,19 @@ class BoardController extends Controller
     
     public function destroy(Request $request, $id)
     {
-        return $this->processIdempotentRequest($request, "delete_board_{$id}", function () use ($id) {
-            $board = $this->findBoardOrFail($id);
-            
-            $this->authorize('delete', $board);
+        $idempotencyKey = $request->input('idempotency_key');
+        
+        if (empty($idempotencyKey)) {
+            return redirect()->back()->withErrors(['error' => 'Idempotency key is required.']);
+        }
 
-            $board->delete();
+        $result = $this->boardService->deleteBoard($id, $idempotencyKey);
 
-            return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
-        });
+        if ($result['status'] === 'warning') {
+            return redirect()->back()->with('warning', $result['message']);
+        }
+
+        return redirect()->route('boards.index')->with('success', $result['message']);
     }
     
-    protected function findBoardOrFail($id)
-    {
-        return Board::findOrFail($id);
-    }
 }

@@ -16,15 +16,17 @@ class BoardService
     protected $boardUserModel;
     protected $userModel;
     protected $boardInvitationModel;
+    protected $idempotencyService;
 
     // Inject the models through the constructor
-    public function __construct(Board $boardModel, Task $taskModel, BoardUser $boardUserModel, User $userModel, BoardInvitation $boardInvitationModel)
+    public function __construct(Board $boardModel, Task $taskModel, BoardUser $boardUserModel, User $userModel, BoardInvitation $boardInvitationModel, IdempotencyService $idempotencyService)
     {
         $this->boardModel = $boardModel;
         $this->taskModel = $taskModel;
         $this->boardUserModel = $boardUserModel;
         $this->userModel = $userModel;
         $this->boardInvitationModel = $boardInvitationModel;
+        $this->idempotencyService = $idempotencyService;
     }
     
     public function getBoardWithTasksAndCollaborators($id)
@@ -168,4 +170,18 @@ class BoardService
                                           ->get();
     }
 
+    public function deleteBoard(string $id, string $idempotencyKey)
+    {
+        return $this->idempotencyService->process("delete_board_{$id}", $idempotencyKey, function () use ($id) 
+            {
+                $board = $this->boardModel->findOrFail($id);
+                $board->delete();
+                return [
+                    'status' => 'success',
+                    'message' => 'Board deleted successfully.',
+                ];
+            }
+        );
+    }
+    
 }
