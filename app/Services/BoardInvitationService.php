@@ -196,6 +196,14 @@ class BoardInvitationService
         return ['success' => 'You declined the invitation.'];
     }
 
+    public function getPendingInvitationsForUser($userId)
+    {
+        return $this->boardInvitationModel->with(['board', 'inviter'])
+                                          ->where('user_id', $userId)
+                                          ->where('status', 'pending')
+                                          ->get();
+    }
+
     public function cancelInvitation(Board $board, BoardInvitation $invitation, $idempotencyKey)
     {
         // Idempotency check (to prevent duplicate actions)
