@@ -422,66 +422,70 @@ class BoardControllerTest extends TestCase
             });
         }
 
-    public function test_show_fetched_collaborators_non_collaborators_and_pending_invitations()
-    {
-        // Create users
-        $owner = User::factory()->create();
-        $collaborator1 = User::factory()->create();
-        $collaborator2 = User::factory()->create();        
-        $nonCollaborator = User::factory()->create();
-        $pendingInvitedUser = User::factory()->create();
-
-        // Create a board with the owner   
-        $board = Board::factory()->create(['user_id' => $owner->id]);
-    
-        // Create BoardUser records for the owner and collaborator
-        BoardUser::factory()->create([
-            'board_id' => $board->id,
-            'user_id' => $owner->id,
-            'role' => 'owner',
-        ]);
-    
-        BoardUser::factory()->create([
-            'board_id' => $board->id,
-            'user_id' => $collaborator1->id,
-            'role' => 'collaborator',
-        ]);
+        public function test_show_fetched_collaborators_non_collaborators_and_pending_invitations()
+        {
+            // Create users
+            $owner = User::factory()->create();
+            $collaborator1 = User::factory()->create();
+            $collaborator2 = User::factory()->create();        
+            $nonCollaborator = User::factory()->create();
+            $pendingInvitedUser = User::factory()->create();
         
-        BoardUser::factory()->create([
-            'board_id' => $board->id,
-            'user_id' => $collaborator2->id,
-            'role' => 'collaborator',
-        ]);
-    
-        // Create a pending invitation
-        BoardInvitation::factory()->create([
-            'board_id' => $board->id,
-            'user_id' => $pendingInvitedUser->id,
-            'invited_by' => $owner->id,
-            'status' => 'pending',
-        ]);
-    
-        // Act: Authenticate the owner
-        $this->actingAs($owner);
-    
-        // Act: Access the board's show method
-        $response = $this->get(route('boards.show', $board->id));
-
-        // Assert: Check collaborators are fetched correctly
-        $this->assertCount(2, $response->viewData('collaborators'));
-
-        // Assert: Check non-collaborators are fetched correctly
-        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board);
-        $this->assertCount(1, $nonCollaborators);
-        $this->assertTrue($nonCollaborators->contains($nonCollaborator));
-
-        // Assert: Check pending invitations are fetched correctly
-        $pendingInvitations = $this->boardService->getPendingInvitations($board);
-        $this->assertCount(1, $pendingInvitations);
-        $this->assertTrue($pendingInvitations->contains(function ($invitation) use ($pendingInvitedUser) {
-            return $invitation->user_id === $pendingInvitedUser->id;
-        }));
-    }
+            // Create a board with the owner   
+            $board = Board::factory()->create(['user_id' => $owner->id]);
+        
+            // Create BoardUser records for the owner and collaborator
+            BoardUser::factory()->create([
+                'board_id' => $board->id,
+                'user_id' => $owner->id,
+                'role' => 'owner',
+            ]);
+        
+            BoardUser::factory()->create([
+                'board_id' => $board->id,
+                'user_id' => $collaborator1->id,
+                'role' => 'collaborator',
+            ]);
+            
+            BoardUser::factory()->create([
+                'board_id' => $board->id,
+                'user_id' => $collaborator2->id,
+                'role' => 'collaborator',
+            ]);
+        
+            // Create a pending invitation
+            BoardInvitation::factory()->create([
+                'board_id' => $board->id,
+                'user_id' => $pendingInvitedUser->id,
+                'invited_by' => $owner->id,
+                'status' => 'pending',
+            ]);
+        
+            // Act: Authenticate the owner
+            $this->actingAs($owner);
+        
+            // Act: Access the board's show method
+            $response = $this->get(route('boards.show', $board->id));
+        
+            // Assert: Check collaborators are fetched correctly
+            $collaborators = $response->viewData('collaborators');
+            $this->assertCount(2, $collaborators);
+            $this->assertTrue($collaborators->contains($collaborator1));
+            $this->assertTrue($collaborators->contains($collaborator2));
+        
+            // Assert: Check non-collaborators are fetched correctly
+            $nonCollaborators = $response->viewData('nonCollaborators');
+            $this->assertCount(1, $nonCollaborators);
+            $this->assertTrue($nonCollaborators->contains($nonCollaborator));
+        
+            // Assert: Check pending invitations are fetched correctly
+            $pendingInvitations = $response->viewData('pendingInvitations');
+            $this->assertCount(1, $pendingInvitations);
+            $this->assertTrue($pendingInvitations->contains(function ($invitation) use ($pendingInvitedUser) {
+                return $invitation->user_id === $pendingInvitedUser->id;
+            }));
+        }
+        
 
     public function test_show_filters_tasks_by_tags()
     {
