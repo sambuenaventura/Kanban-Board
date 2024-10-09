@@ -32,30 +32,97 @@ class BoardService
         return $this->boardModel->with('tasks', 'collaborators')->findOrFail($id);
     }
 
+    public function getBoards($userId, $isOwner = true)
+    {
+        $query = $this->boardModel->with(['user', 'boardUsers.user'])
+            ->withCount(['tasks', 'boardUsers'])
+            ->withCount([
+                'tasks as overdue_tasks_count' => function ($query) {
+                    $query->where('due', '<', now())->where('progress', '!=', 'done');
+                },
+                'tasks as due_today_tasks_count' => function ($query) {
+                    $query->where('due', '=', now()->startOfDay())->where('progress', '!=', 'done');
+                },
+                'tasks as due_soon_tasks_count' => function ($query) {
+                    $query->where('due', '>', now()->endOfDay())
+                        ->where('due', '<=', now()->addWeek())
+                        ->where('progress', '!=', 'done');
+                },
+            ]);
+
+        if ($isOwner) {
+            // Filter by owner
+            $query->where('user_id', $userId);
+        } else {
+            // Filter by collaborators from boardUsers
+            $query->whereHas('boardUsers', function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->where('role', 'collaborator');
+            });
+        }
+    
+        return $query->paginate(6, ['*'], $isOwner ? 'owned_page' : 'collaborated_page');
+    }
+
     public function getOwnedBoards($userId)
     {
-        return $this->boardModel->with(['user', 'tasks', 'boardUsers'])
-                                ->withCount(['tasks', 'boardUsers'])
-                                ->where('user_id', $userId)
-                                ->paginate(9, ['*'], 'page');  // Using 'page' as the query parameter
+        return $this->getBoards($userId, true);
     }
 
     public function getCollaboratedBoards($userId)
     {
-        return $this->boardModel->with(['user', 'tasks', 'collaborators'])
-                                ->withCount(['tasks', 'boardUsers'])
-                                ->whereHas('collaborators', function ($query) use ($userId) {
-                                    $query->where('users.id', $userId);
-                                })
-                                ->paginate(9, ['*'], 'collaborated_page');  // Using 'collaborated_page' as the query parameter
+        return $this->getBoards($userId, false);
     }
 
     public function addTaskCountsToBoards($boards)
     {
-        return $boards->each(function ($board) {
-            $board->taskCounts = $this->taskModel->getTaskCounts($board->id);
-        });
+        foreach ($boards as $board) {
+            $board->taskCounts = [
+                'overdue' => $board->overdue_tasks_count,
+                'dueToday' => $board->due_today_tasks_count,
+                'dueSoon' => $board->due_soon_tasks_count,
+            ];
+        }
+
+        return $boards;
     }
+
+    public function sortCollaborators($boardUsers, $userId, $limit = 3)
+    {
+        $owner = null;
+        $authUser = null;
+        $otherCollaborators = [];
+    
+        foreach ($boardUsers as $user) {
+            if ($user->role === 'owner') {
+                $owner = $user;
+            } elseif ($user->user_id === $userId) {
+                $authUser = $user;
+            } else {
+                $otherCollaborators[] = $user;
+            }
+        }
+    
+        $sortedCollaborators = [];
+        if ($owner) {
+            $sortedCollaborators[] = $owner;
+        }
+        if ($authUser && $authUser !== $owner) {
+            $sortedCollaborators[] = $authUser;
+        }
+    
+        $remainingSlots = $limit - count($sortedCollaborators);
+        $sortedCollaborators = array_merge($sortedCollaborators, array_slice($otherCollaborators, 0, $remainingSlots));
+    
+        $remainingCount = count($boardUsers) - count($sortedCollaborators);
+    
+        if ($remainingCount > 0) {
+            $sortedCollaborators[] = ['remaining_count' => $remainingCount];
+        }
+    
+        return $sortedCollaborators;
+    }
+    
 
     public function createBoard(array $data)
     {
@@ -78,27 +145,26 @@ class BoardService
     {
         return $board->collaborators ?? collect();
     }
-
-    public function getNonCollaboratorsExcludingInvited($board)
-    {
-        $collaborators = $this->getCollaborators($board);
-        $pendingInvitations = $this->getPendingInvitations($board);
-        $invitedUserIds = $pendingInvitations->pluck('user_id');
     
+    public function getNonCollaboratorsExcludingInvited($board, $pendingInvitations)
+    {
+        $collaborators = $this->getCollaborators($board)->keyBy('id'); // Eager loading and keying by ID
+        $invitedUserIds = $pendingInvitations->pluck('user_id')->toArray(); // Collect IDs as an array
+        
         return $this->userModel->whereDoesntHave('boards', function ($query) use ($board) {
                 $query->where('boards.id', $board->id);
             })
             ->where('id', '!=', auth()->id())
-            ->whereNotIn('id', $collaborators->pluck('id'))
+            ->whereNotIn('id', $collaborators->keys()) // Use keys directly from the keyed collection
             ->whereNotIn('id', $invitedUserIds)
             ->get();
     }
     
     public function getPendingInvitations($board)
     {
-        return $this->boardInvitationModel->where('board_id', $board->id)
+        return $this->boardInvitationModel->with('invitedUser')
+                                          ->where('board_id', $board->id)
                                           ->where('status', 'pending')
-                                          ->with('invitedUser')
                                           ->get();
     }
 

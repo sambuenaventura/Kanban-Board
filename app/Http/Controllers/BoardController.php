@@ -36,15 +36,23 @@ class BoardController extends Controller
         $userId = Auth::id();
         $boardsOwned = $this->boardService->getOwnedBoards($userId);
         $boardsCollaborated = $this->boardService->getCollaboratedBoards($userId);
-
-        // Add task counts to each board
+       
         $this->boardService->addTaskCountsToBoards($boardsOwned);
         $this->boardService->addTaskCountsToBoards($boardsCollaborated);
 
+        $this->sortCollaboratorsForBoards($boardsOwned, $userId);
+        $this->sortCollaboratorsForBoards($boardsCollaborated, $userId);
+    
         return view('boards.index', compact('boardsOwned', 'boardsCollaborated', 'userId'));
     }
-    
 
+    private function sortCollaboratorsForBoards($boards, $userId)
+    {
+        foreach ($boards as $board) {
+            $board->sortedCollaborators = $this->boardService->sortCollaborators($board->boardUsers, $userId);
+        }
+    }
+    
     public function create()
     {
         return view('boards.create');
@@ -75,20 +83,17 @@ class BoardController extends Controller
         
         // Get collaborators
         $collaborators = $this->boardService->getCollaborators($board);
-    
-        // Fetch users who are not collaborators or the authenticated user
-        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board);
-    
+
         // Fetch pending invitations
         $pendingInvitations = $this->boardService->getPendingInvitations($board);
-    
+        
+        // Fetch users who are not collaborators or the authenticated user
+        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board, $pendingInvitations);    
+
         // Filter by tags
         $selectedTags = $this->getSelectedTags($request);
-
         if (!empty($selectedTags)) {
             $tasks = $this->filterTasksByTags($tasks, $selectedTags);
-        } else {
-            $tasks = $tasks;
         }
 
         // Filter by priority (if selected)

@@ -41,30 +41,44 @@ class TaskService
     public function getTaskByProgress($tasks, $progress)
     {
         return $tasks->where('progress', $progress)
-                     ->map(function($task) {
-                         // Add a custom flag for overdue, due today, or due soon
+                     ->map(function ($task) {
                          if ($task->due < Carbon::today()) {
                              $task->is_overdue = true;
                          } elseif ($task->due->isToday()) {
                              $task->is_due_today = true;
-                         } elseif ($task->due->isBetween(Carbon::tomorrow(), Carbon::today()->addDays(3))) {
+                         } elseif ($task->due->isBetween(Carbon::tomorrow(), Carbon::today()->addWeek())) {
                              $task->is_due_soon = true;
                          }
                          return $task;
                      })
-                     ->groupBy(function($task) {
+                     ->groupBy(function ($task) {
                          return Carbon::parse($task->due)->format('Y-m-d');
                      })->sortKeys();
     }
-    
 
     public function getTaskCounts($tasks)
     {
-        return [
-            'to_do' => $tasks->where('progress', 'to_do')->count(),
-            'in_progress' => $tasks->where('progress', 'in_progress')->count(),
-            'done' => $tasks->where('progress', 'done')->count(),
+        $taskCounts = [
+            'to_do' => 0,
+            'in_progress' => 0,
+            'done' => 0,
         ];
+    
+        foreach ($tasks as $task) {
+            switch ($task->progress) {
+                case 'to_do':
+                    $taskCounts['to_do']++;
+                    break;
+                case 'in_progress':
+                    $taskCounts['in_progress']++;
+                    break;
+                case 'done':
+                    $taskCounts['done']++;
+                    break;
+            }
+        }
+    
+        return $taskCounts;
     }
     
     public function createTask(Board $board, array $data, string $idempotencyKey)
@@ -91,6 +105,12 @@ class TaskService
             return ['error' => 'You are not authorized to add tasks to this board.'];
         }
     
+        // Check the number of existing tasks for the board
+        $taskCount = $this->taskModel->where('board_id', $board->id)->count();
+        if ($taskCount >= 100) {
+            return ['error' => 'You have reached the maximum limit of 100 tasks for this board.'];
+        }
+    
         // Create the task using mass assignment
         $task = $this->taskModel->create([
             'name' => $data['name'],
@@ -110,7 +130,6 @@ class TaskService
     
         return ['success' => 'Task created successfully.', 'task' => $task];
     }
-    
 
     public function getTaskDetails($boardId, $taskId)
     {
@@ -180,7 +199,6 @@ class TaskService
             'task' => $task,
         ];
     }
-    
 
     public function addAttachmentToTask(Task $task, $file)
     {

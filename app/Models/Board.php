@@ -42,7 +42,7 @@ class Board extends Model
 
     public function boardUsers()
     {
-        return $this->hasMany(BoardUser::class);
+        return $this->hasMany(BoardUser::class)->with('user');
     }
 
     public static function getDues($tasks)
