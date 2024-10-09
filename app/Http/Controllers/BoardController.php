@@ -83,13 +83,13 @@ class BoardController extends Controller
         
         // Get collaborators
         $collaborators = $this->boardService->getCollaborators($board);
-    
-        // Fetch users who are not collaborators or the authenticated user
-        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board);
-    
+
         // Fetch pending invitations
         $pendingInvitations = $this->boardService->getPendingInvitations($board);
-    
+        
+        // Fetch users who are not collaborators or the authenticated user
+        $nonCollaborators = $this->boardService->getNonCollaboratorsExcludingInvited($board, $pendingInvitations);    
+
         // Filter by tags
         $selectedTags = $this->getSelectedTags($request);
         if (!empty($selectedTags)) {
