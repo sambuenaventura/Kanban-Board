@@ -83,11 +83,6 @@ class TaskService
     
     public function createTask(Board $board, array $data, string $idempotencyKey)
     {
-        // Idempotency check (to prevent duplicate actions)
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'Task has already been created.'];
-        }
-    
         // Check if a task with the same name already exists
         $existingTask = $this->taskModel->where('name', $data['name'])
                                          ->where('board_id', $board->id)
@@ -124,9 +119,6 @@ class TaskService
         ]);
     
         broadcast(new BoardTaskCreated($task));
-    
-        // Store the idempotency key in the cache to prevent duplicate processing
-        $this->cacheIdempotencyKey($idempotencyKey);
     
         return ['success' => 'Task created successfully.', 'task' => $task];
     }
