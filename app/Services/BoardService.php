@@ -162,9 +162,9 @@ class BoardService
     
     public function getPendingInvitations($board)
     {
-        return $this->boardInvitationModel->where('board_id', $board->id)
+        return $this->boardInvitationModel->with('invitedUser')
+                                          ->where('board_id', $board->id)
                                           ->where('status', 'pending')
-                                          ->with('invitedUser')
                                           ->get();
     }
 
