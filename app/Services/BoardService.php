@@ -145,18 +145,17 @@ class BoardService
     {
         return $board->collaborators ?? collect();
     }
-
-    public function getNonCollaboratorsExcludingInvited($board)
-    {
-        $collaborators = $this->getCollaborators($board);
-        $pendingInvitations = $this->getPendingInvitations($board);
-        $invitedUserIds = $pendingInvitations->pluck('user_id');
     
+    public function getNonCollaboratorsExcludingInvited($board, $pendingInvitations)
+    {
+        $collaborators = $this->getCollaborators($board)->keyBy('id'); // Eager loading and keying by ID
+        $invitedUserIds = $pendingInvitations->pluck('user_id')->toArray(); // Collect IDs as an array
+        
         return $this->userModel->whereDoesntHave('boards', function ($query) use ($board) {
                 $query->where('boards.id', $board->id);
             })
             ->where('id', '!=', auth()->id())
-            ->whereNotIn('id', $collaborators->pluck('id'))
+            ->whereNotIn('id', $collaborators->keys()) // Use keys directly from the keyed collection
             ->whereNotIn('id', $invitedUserIds)
             ->get();
     }
