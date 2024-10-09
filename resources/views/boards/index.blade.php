@@ -146,9 +146,9 @@
                         <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Team Boards</h1>
                         <div class="flex items-center">
                             <span class="text-sm text-gray-600 mr-2">Boards you're collaborating on</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 total-boards-count">
                                 {{ $boardsCollaborated->total() }} Boards
-                            </span>
+                            </span>                            
                         </div>
                     </div>
                     
@@ -237,9 +237,12 @@
                             </div>
                         @empty
                             <div class="col-span-full">
-                                <div class="bg-gray-100 p-6 rounded-lg text-center">
-                                    <h3 class="text-lg font-semibold text-gray-700">No Boards Collaborated</h3>
-                                    <p class="text-gray-500">You have not collaborated on any boards yet.</p>
+                                <div class="text-center py-12 bg-white rounded-lg shadow-md border border-gray-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" class="mx-auto" fill="#9CA3AF">
+                                        <path d="M240-120q-66 0-113-47T80-280q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm480 0q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm-480-80q33 0 56.5-23.5T320-280q0-33-23.5-56.5T240-360q-33 0-56.5 23.5T160-280q0 33 23.5 56.5T240-200Zm480 0q33 0 56.5-23.5T800-280q0-33-23.5-56.5T720-360q-33 0-56.5 23.5T640-280q0 33 23.5 56.5T720-200ZM480-520q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T560-680q0-33-23.5-56.5T480-760q-33 0-56.5 23.5T400-680q0 33 23.5 56.5T480-600Zm0-80Zm240 400Zm-480 0Z"/>
+                                    </svg>
+                                    <p class="mt-4 text-lg font-medium text-gray-900">No boards found</p>
+                                    <p class="mt-2 text-sm text-gray-600">Join a team to start collaborating!</p>
                                 </div>
                             </div>
                         @endforelse
