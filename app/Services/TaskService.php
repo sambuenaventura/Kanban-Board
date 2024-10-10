@@ -40,6 +40,12 @@ class TaskService
         return $board->tasks;
     }
     
+    public function getTaskById(string $id)
+    {
+        return $this->taskModel->find($id);
+
+    }
+    
     public function getTaskByProgress($tasks, $progress)
     {
         return $tasks->where('progress', $progress)
