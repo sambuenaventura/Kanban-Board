@@ -13,6 +13,7 @@ use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
 use App\Services\BoardInvitationService;
+use App\Traits\IdempotentRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Cache;
 
 class BoardUserController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, IdempotentRequest;
 
     protected $boardInvitationService;
 
@@ -31,19 +32,27 @@ class BoardUserController extends Controller
 
     public function removeUserFromBoard(Request $request, Board $board, User $user)
     {
-        $this->authorize('owner', $board);
-
-        $response = $this->boardInvitationService->removeUserFromBoard($board, $user, $request->idempotency_key);
-        
-        if (isset($response['error'])) {
-            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['error']]);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
+    
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.index')->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.show', $board->id)->with('warning', $response['warning']);
+        $this->authorize('ownerOrCollaborator', $board);
+    
+        $response = $this->boardInvitationService->removeUserFromBoard($board, $user, $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['message']]);
         }
     
-        return redirect()->route('boards.show', $board->id)->with('success', $response['success']);
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.show', $board->id)->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.show', $board->id)->with('success', $response['message']);
     }
     
     public function inviteUserToBoard(InviteUserRequest $request, $boardId)
