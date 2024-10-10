@@ -15,7 +15,7 @@
                     <form action="{{ route('boards.tasks.update', ['boardId' => $boardId, 'taskId' => $task->id]) }}" method="POST">
                         @csrf
                         @method('PATCH')
-                    
+                        <input type="hidden" name="idempotency_key" value="{{ Str::uuid() }}">
                         <input type="hidden" name="source" value="edit">
 
                         <div class="grid grid-cols-1 gap-6">

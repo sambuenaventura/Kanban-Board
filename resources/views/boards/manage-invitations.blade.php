@@ -30,14 +30,14 @@
                                 <div class="flex items-center space-x-2">
                                     <form action="{{ route('boards.acceptInvitation', $invitation) }}" method="POST">
                                         @csrf
-                                        <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
+                                        <input type="hidden" name="idempotency_key" value="{{ Str::uuid() }}">
                                         <button type="submit" class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                             Accept
                                         </button>
                                     </form>
                                     <form action="{{ route('boards.declineInvitation', $invitation) }}" method="POST">
                                         @csrf
-                                        <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
+                                        <input type="hidden" name="idempotency_key" value="{{ Str::uuid() }}">
                                         <button type="submit" class="inline-flex items-center px-5 py-2 border border-gray-300 text-sm font-medium rounded-full shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                             Decline
                                         </button>

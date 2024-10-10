@@ -19,6 +19,7 @@
                             <form action="{{ route('boards.tasks.update', ['boardId' => $boardId, 'taskId' => $task->id]) }}" method="POST">
                                 @csrf
                                 @method('PATCH')
+                                <input type="hidden" name="idempotency_key" value="{{ Str::uuid() }}">
                                 <input type="hidden" name="source" value="progress">
                                 <div class="relative inline-block">
                                     <select 
@@ -98,6 +99,7 @@
                         <form action="{{ route('tasks.uploadFile', $task) }}" method="POST" enctype="multipart/form-data" class="mt-2">
                             @csrf
                             @method('POST')
+                            <input type="hidden" name="idempotency_key" value="{{ Str::uuid() }}">
                             <div class="flex items-center space-x-4">
                                 <input type="file" name="attachment" accept="file/*" class="block w-56 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:border-indigo-700 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
