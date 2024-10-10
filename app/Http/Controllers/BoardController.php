@@ -17,7 +17,6 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 class BoardController extends Controller
 {
@@ -59,7 +58,6 @@ class BoardController extends Controller
         return view('boards.create');
     }
 
-
     public function store(StoreBoardRequest $request)
     {
         // Create a new board with the validated data
@@ -71,7 +69,6 @@ class BoardController extends Controller
         // Redirect to boards index or other relevant route
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
-
 
     public function show($id, Request $request)
     {
@@ -179,7 +176,6 @@ class BoardController extends Controller
         return view('boards.edit', compact('board'));
     }
 
-
     public function update(UpdateBoardRequest $request, $id)
     {
         $board = Board::findOrFail($id);
@@ -193,18 +189,26 @@ class BoardController extends Controller
     
     public function destroy(Request $request, $id)
     {
+        // Get the idempotency key from the request
         $idempotencyKey = $request->input('idempotency_key');
-        
+    
+        // Check if the idempotency key is present
         if (empty($idempotencyKey)) {
-            return redirect()->back()->withErrors(['error' => 'Idempotency key is required.']);
+            return redirect()->route('boards.index')->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
-
+    
+        $board = $this->boardService->getBoardById($id);
+    
+        if ($board) {
+            $this->authorize('owner', $board);
+        }
+    
         $result = $this->boardService->deleteBoard($id, $idempotencyKey);
-
+    
         if ($result['status'] === 'warning') {
-            return redirect()->back()->with('warning', $result['message']);
+            return redirect()->route('boards.index')->with('warning', $result['message']);
         }
-
+    
         return redirect()->route('boards.index')->with('success', $result['message']);
     }
     
