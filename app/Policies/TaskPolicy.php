@@ -15,15 +15,18 @@ class TaskPolicy
         //
     }
 
-    public function isOwnerOrCollaborator(User $user, Task $task)
+    /**
+     * Check if the user is the owner or a collaborator of the board associated with the task.
+     */
+    public function ownerOrCollaborator(User $user, Task $task)
     {
-        // Check if the user is the owner of the board
+        // Check if the user is the owner of the board that owns the task
         if ($task->board->user_id === $user->id) {
             return true;
         }
     
-        // Check if the user is a collaborator on the board
-        if ($task->board->collaborators->contains($user->id)) {
+        // Check if the user is a collaborator on the board that owns the task
+        if ($task->board->collaborators()->where('user_id', $user->id)->exists()) {
             return true;
         }
     
