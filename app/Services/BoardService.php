@@ -66,6 +66,11 @@ class BoardService
         return $query->paginate(6, ['*'], $isOwner ? 'owned_page' : 'collaborated_page');
     }
 
+    public function getBoardById(string $id)
+    {
+        return $this->boardModel->find($id);
+    }
+
     public function getOwnedBoards($userId)
     {
         return $this->getBoards($userId, true);
@@ -183,5 +188,4 @@ class BoardService
             }
         );
     }
-    
 }
