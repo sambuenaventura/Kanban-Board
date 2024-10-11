@@ -42,7 +42,7 @@ class TaskController extends Controller
         $board = Board::findOrFail($request->input('board_id'));
 
         // Authorize the user to add tasks to the board
-        $this->authorize('view', $board);
+        $this->authorize('ownerOrCollaborator', $board);
 
         // Call the service and get the response
         $response = $this->taskService->createTask($board, $request->validated(), $request->idempotency_key);
