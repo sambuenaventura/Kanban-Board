@@ -186,7 +186,13 @@ class TaskController extends Controller
 
     public function updateStatus(UpdateTaskStatusRequest $request, $taskId)
     {
-        try {
+        $task = $this->taskService->getTaskById($taskId);
+
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+        
+        try {    
             $response = $this->taskService->updateTaskStatus($taskId, $request->input('progress'));
             return response()->json($response);
         } 
