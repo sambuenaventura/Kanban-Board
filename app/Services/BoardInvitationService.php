@@ -32,20 +32,31 @@ class BoardInvitationService
     {
         return $this->boardInvitationModel->find($id);
     }
+
+    public function removeUserFromBoard(Board $board, User $user, string $idempotencyKey)
+    {
+        return $this->idempotencyService->process("remove_user_{$user->id}_from_board_{$board->id}", $idempotencyKey, function () use ($board, $user) {
+            // Check if the user is a collaborator before attempting to detach
+            if (!$board->users()->where('user_id', $user->id)->exists()) {
+                return [
+                    'status' => 'error',
+                    'message' => 'User is not a collaborator on this board.',
+                ];
+            }
     
-        // Detach the user from the board
-        $board->users()->detach($user->id);
+            // Detach the user from the board
+            $board->users()->detach($user->id);
+
+            // Broadcast the removed collaborator
+            broadcast(new BoardRemoveCollaborator($user->id, $board->id));  
     
-        broadcast(new BoardRemoveCollaborator($user->id, $board->id));  
-        
-        // Store the idempotency key in the cache
-        $this->cacheIdempotencyKey($idempotencyKey);
-    
-        return ['success' => 'User removed from the board successfully.'];
+            return [
+                'status' => 'success',
+                'message' => 'User removed from the board successfully.',
+            ];
+        });
     }
     
-
-    public function inviteUser($boardId, $userId, $idempotencyKey)
     {
         // Check if the idempotency key is already used
         if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
