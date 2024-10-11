@@ -113,7 +113,22 @@ class TaskController extends Controller
      
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
-        $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'));
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
+    
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.show', $task->board_id)
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
+        }
+
+        $task = $this->taskService->getTaskById($task->id);
+
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
+        $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'), $idempotencyKey);
     
         if (isset($response['error'])) {
             return redirect()->route('boards.show', $task->board_id)
@@ -121,7 +136,7 @@ class TaskController extends Controller
         }
     
         return to_route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
-            ->with('success', $response['success']);
+               ->with('success', $response['message']);
     }
     
     public function destroy(Request $request, $boardId, $taskId)
