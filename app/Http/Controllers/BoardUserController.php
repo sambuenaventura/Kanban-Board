@@ -55,19 +55,28 @@ class BoardUserController extends Controller
         return redirect()->route('boards.show', $board->id)->with('success', $response['message']);
     }
     
-    public function inviteUserToBoard(InviteUserRequest $request, $boardId)
+    public function inviteUserToBoard(InviteUserRequest $request, Board $board)
     {
-        $response = $this->boardInvitationService->inviteUser($boardId, $request->user_id, $request->idempotency_key);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
-        if (isset($response['error'])) {
-            return redirect()->back()->withErrors(['user' => $response['error']]);
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.show', $board->id)
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.show', $boardId)->with('warning', $response['warning']);
+        $response = $this->boardInvitationService->inviteUser($board, $request->user_id, $idempotencyKey);
+    
+        if (isset($response['status']) && $response['status'] === 'error') {
+            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['message']]);
         }
     
-        return redirect()->route('boards.show', $boardId)->with('success', $response['success']);
+        if (isset($response['status']) && $response['status'] === 'warning') {
+            return redirect()->route('boards.show', $board->id)->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.show', $board->id)->with('success', $response['message']);
     }
 
     public function acceptInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
