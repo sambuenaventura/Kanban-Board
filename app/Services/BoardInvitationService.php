@@ -112,54 +112,58 @@ class BoardInvitationService
         });
     }
 
-    public function acceptInvitation(BoardInvitation $invitation, $idempotencyKey)
+    public function acceptInvitation(BoardInvitation $invitation, string $idempotencyKey)
     {
-        // Idempotency check (to prevent duplicate actions)
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'This action has already been processed.'];
-        }
-
-        // Check if the invitation is already accepted
-        if ($invitation->status === 'accepted') {
+        return $this->idempotencyService->process("accept_invitation_{$invitation->id}", $idempotencyKey, function () use ($invitation) {
+            // Check if the invitation is already accepted
+            if ($invitation->status === 'accepted') {
+                return [
+                    'status' => 'error', // Indicate an error
+                    'message' => 'This invitation has already been accepted.',
+                ];
+            }
+    
+            // Ensure the authenticated user is the invitee
+            if ($invitation->user_id !== auth()->id()) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Unauthorized action.',
+                ];
+            }
+    
+            // Check if the user is already a collaborator
+            $isCollaborator = BoardUser::where('board_id', $invitation->board_id)
+                                        ->where('user_id', $invitation->user_id)
+                                        ->exists();
+    
+            if ($isCollaborator) {
+                return [
+                    'status' => 'warning',
+                    'message' => 'You are already a collaborator on this board.',
+                ];
+            }
+    
+            // Add the user to the board
+            BoardUser::create([
+                'board_id' => $invitation->board_id,
+                'user_id' => $invitation->user_id,
+                'role' => 'collaborator',
+            ]);
+    
+            // Update invitation status
+            $invitation->update(['status' => 'accepted']);
+    
+            // Fetch the updated invitation count for the invitee
+            $invitationCount = $this->userModel->find($invitation->user_id)->invitationCount();
+    
+            // Broadcast the updated invitation count
+            broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+    
             return [
-                'error' => 'This invitation has already been accepted.'
+                'status' => 'success',
+                'message' => 'You have joined the board.',
             ];
-        }
-    
-        // Ensure the authenticated user is the invitee
-        if ($invitation->user_id !== auth()->id()) {
-            return ['error' => 'Unauthorized action.'];
-        }
-    
-        // Check if the user is already a collaborator
-        $isCollaborator = BoardUser::where('board_id', $invitation->board_id)
-                                    ->where('user_id', $invitation->user_id)
-                                    ->exists();
-    
-        if ($isCollaborator) {
-            return ['warning' => 'You are already a collaborator on this board.'];
-        }
-    
-        // Add the user to the board
-        BoardUser::create([
-            'board_id' => $invitation->board_id,
-            'user_id' => $invitation->user_id,
-            'role' => 'collaborator',
-        ]);
-    
-        // Update invitation status
-        $invitation->update(['status' => 'accepted']);
-    
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-    
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-
-        // Store the idempotency key in the cache
-        $this->cacheIdempotencyKey($idempotencyKey);
-        
-        return ['success' => 'You have joined the board.'];
+        });
     }
 
     public function declineInvitation(BoardInvitation $invitation, $idempotencyKey)
