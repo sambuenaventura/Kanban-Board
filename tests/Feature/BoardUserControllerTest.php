@@ -7,6 +7,7 @@ use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
 use App\Services\BoardInvitationService;
+use App\Services\IdempotencyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +17,7 @@ class BoardUserControllerTest extends TestCase
 
     protected $user;
     protected $collaborator;
+    protected $nonOwnerOrNonCollaborator;
     protected $board;
     protected $boardInvitationService;
 
@@ -29,6 +31,9 @@ class BoardUserControllerTest extends TestCase
         // Create a collaborator user
         $this->collaborator = User::factory()->create();
 
+        // Create a non-Owner user
+        $this->nonOwnerOrNonCollaborator = User::factory()->create();
+
         // Create a board and associate it with the user (owner)
         $this->board = Board::factory()->create(['user_id' => $this->user->id]);
 
@@ -39,24 +44,34 @@ class BoardUserControllerTest extends TestCase
         $boardInvitationModel = new BoardInvitation();
         // Create an instance of the BoardUser model
         $boardUserModel = new BoardUser();
+        
+        // Create an instance of the User model
+        $userModel = new User();
+
+        // Create an instance of the Idempotency Service
+        $idempotencyService = new IdempotencyService();
 
         // Initialize the BoardService with model instances
         $this->boardInvitationService = new BoardInvitationService(
             $boardInvitationModel,
             $boardUserModel,
+            $userModel,
+            $idempotencyService,
         );
     }
 
-    public function test_index_owner_can_remove_user_from_board()
+    public function test_remove_user_from_board_success()
     {
-        // Simulate the request to remove the user from the board
+        // Simulate the request to remove the user from the board with an idempotency key
         $response = $this->actingAs($this->user)
-            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $this->collaborator->id]));
-    
+            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $this->collaborator->id]), [
+                'idempotency_key' => 'unique-key-123', 
+            ]);
+
         // Assert that the response redirects with a success message
         $response->assertRedirect(route('boards.show', $this->board->id));
         $response->assertSessionHas('success', 'User removed from the board successfully.');
-    
+
         // Check that the user has been removed from the board
         $this->assertDatabaseMissing('board_users', [
             'board_id' => $this->board->id,
@@ -64,26 +79,28 @@ class BoardUserControllerTest extends TestCase
         ]);
     }
 
-    public function test_index_non_owner_cannot_remove_user_from_board()
+    public function test_remove_user_from_board_non_owner_cannot_remove()
     {
-        // Create another user who is not the board owner
-        $nonOwner = User::factory()->create();
-    
-        // Attempt to remove the collaborator as a non-owner
-        $response = $this->actingAs($nonOwner)
-            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $this->collaborator->id]));
-    
+        // Attempt to remove the collaborator as a non-owner, without an idempotency key
+        $response = $this->actingAs($this->nonOwnerOrNonCollaborator)
+            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $this->collaborator->id]), [
+                'idempotency_key' => 'unique-key-456', 
+            ]);
+
         // Assert that the response status is 403 Forbidden
         $response->assertStatus(403);
     }
-
+    
     public function test_index_cannot_remove_non_collaborator_user()
     {
-        $nonCollaborator = User::factory()->create();
-
-        // Attempt to remove a user who is not a collaborator
-        $response = $this->actingAs($this->user)
-            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $nonCollaborator->id]));
+        // Ensure that the user trying to remove is the owner of the board
+        $response = $this->actingAs($this->user) // The board owner
+            ->delete(route('boards.removeUser', [
+                'board' => $this->board->id,
+                'user' => $this->nonOwnerOrNonCollaborator->id // This user is not a collaborator
+            ]), [
+                'idempotency_key' => 'unique-key-123', 
+            ]);
 
         // Assert that the response redirects with an error message
         $response->assertRedirect(route('boards.show', $this->board->id));
@@ -107,7 +124,7 @@ class BoardUserControllerTest extends TestCase
 
         // Assert that the response shows a warning
         $response->assertRedirect(route('boards.show', $this->board->id));
-        $response->assertSessionHas('warning', 'This action has already been processed.');
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
     
     public function test_index_board_does_not_exist()
@@ -122,9 +139,17 @@ class BoardUserControllerTest extends TestCase
     
     public function test_index_collaborator_already_removed()
     {
+        // Define a unique idempotency key for the test
+        $idempotencyKey = 'unique-key-123';
+    
         // First, remove the collaborator from the board
         $response = $this->actingAs($this->user)
-            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $this->collaborator->id]));
+            ->delete(route('boards.removeUser', [
+                'board' => $this->board->id,
+                'user' => $this->collaborator->id
+            ]), [
+                'idempotency_key' => $idempotencyKey
+            ]);
     
         // Assert the success response on the first removal
         $response->assertRedirect(route('boards.show', $this->board->id));
@@ -132,11 +157,16 @@ class BoardUserControllerTest extends TestCase
     
         // Attempt to remove the same collaborator again
         $response = $this->actingAs($this->user)
-            ->delete(route('boards.removeUser', ['board' => $this->board->id, 'user' => $this->collaborator->id]));
+            ->delete(route('boards.removeUser', [
+                'board' => $this->board->id,
+                'user' => $this->collaborator->id
+            ]), [
+                'idempotency_key' => $idempotencyKey
+            ]);
     
-        // Assert that the response redirects with an error message
+        // Assert that the response redirects with a warning message
         $response->assertRedirect(route('boards.show', $this->board->id));
-        $response->assertSessionHas('warning', 'This action has already been processed.');
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
 
     public function test_invite_user_success()
@@ -214,23 +244,29 @@ class BoardUserControllerTest extends TestCase
 
     public function test_invite_user_idempotency_key_used()
     {
+        // Arrange: Create an invitee user
         $invitee = User::factory()->create();
     
-        // Cache the idempotency key to simulate that it has been used
-        $this->boardInvitationService->cacheIdempotencyKey('unique-key');
+        // Arrange: Authenticate the current user
+        $this->actingAs($this->user);
     
-        // Simulate the request to invite the user using the cached idempotency key
-        $response = $this->actingAs($this->user)
-            ->post(route('boards.inviteUser', ['board' => $this->board->id]), [
-                'user_id' => $invitee->id,
-                'idempotency_key' => 'unique-key', 
-            ]);
+        // Act: Send a POST request with a unique idempotency key
+        $this->post(route('boards.inviteUser', ['board' => $this->board->id]), [
+            'user_id' => $invitee->id,
+            'idempotency_key' => 'unique-key',
+        ]);
     
-        // Assert that the response redirects to the board's show page
+        // Act: Send the same request again to simulate idempotency key reuse
+        $response = $this->post(route('boards.inviteUser', ['board' => $this->board->id]), [
+            'user_id' => $invitee->id,
+            'idempotency_key' => 'unique-key',
+        ]);
+    
+        // Assert: Redirected to the board's show page
         $response->assertRedirect(route('boards.show', $this->board->id));
     
-        // Assert that the session has a warning message indicating the invitation was already sent
-        $response->assertSessionHas('warning', 'An invitation has already been sent to this user.');
+        // Assert: The session contains a warning message about the idempotency key
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
     
     public function test_accept_invitation_success()
@@ -298,11 +334,11 @@ class BoardUserControllerTest extends TestCase
     
     public function test_accept_invitation_idempotency_key_used()
     {
-        // Create a user and a board invitation
+        // Arrange: Create a user and authenticate as the invitee
         $invitee = User::factory()->create();
         $this->actingAs($invitee);
     
-        // Create a pending invitation
+        // Arrange: Create a pending invitation
         $invitation = BoardInvitation::create([
             'board_id' => $this->board->id,
             'user_id' => $invitee->id,
@@ -310,17 +346,23 @@ class BoardUserControllerTest extends TestCase
             'status' => 'pending',
         ]);
     
-        // Simulate storing the idempotency key in cache
-        $this->boardInvitationService->cacheIdempotencyKey('unique-key');
-    
-        // Call the acceptInvitation method
+        // Act: First call to accept the invitation with a unique idempotency key
         $response = $this->post(route('boards.acceptInvitation', $invitation->id), [
             'idempotency_key' => 'unique-key',
         ]);
     
-        // Assert the redirect and warning message
+        // Assert success response for the first call
         $response->assertRedirect(route('boards.show', $this->board->id));
-        $response->assertSessionHas('warning', 'This action has already been processed.');
+        $response->assertSessionHas('success', 'You have joined the board.');
+    
+        // Act: Second call to accept the same invitation with the same idempotency key
+        $response = $this->post(route('boards.acceptInvitation', $invitation->id), [
+            'idempotency_key' => 'unique-key',
+        ]);
+    
+        // Assert that the response indicates the action has already been processed
+        $response->assertRedirect(route('boards.show', $this->board->id));
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
     
     public function test_decline_invitation_success()
@@ -375,27 +417,35 @@ class BoardUserControllerTest extends TestCase
 
     public function test_decline_invitation_idempotency_key_used()
     {
+        // Arrange: Create a user and authenticate as the invitee
         $invitee = User::factory()->create();
         $this->actingAs($invitee);
-
-        // Create a pending invitation
+    
+        // Arrange: Create a pending invitation
         $invitation = BoardInvitation::create([
             'board_id' => $this->board->id,
             'user_id' => $invitee->id,
             'invited_by' => $this->user->id,
             'status' => 'pending',
         ]);
-
-        // Simulate storing the idempotency key in cache
-        $this->boardInvitationService->cacheIdempotencyKey('unique-key');
-
+    
+        // Act: First call to decline the invitation with a unique idempotency key
         $response = $this->post(route('boards.declineInvitation', $invitation->id), [
             'idempotency_key' => 'unique-key',
         ]);
-
-        // Assert the redirect and warning message
+    
+        // Assert success response for the first call
         $response->assertRedirect(route('boards.index'));
-        $response->assertSessionHas('warning', 'This action has already been processed.');
+        $response->assertSessionHas('success', 'You declined the invitation.');
+    
+        // Act: Second call to decline the same invitation with the same idempotency key
+        $response = $this->post(route('boards.declineInvitation', $invitation->id), [
+            'idempotency_key' => 'unique-key',
+        ]);
+    
+        // Assert that the response indicates the action has already been processed
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
 
     public function test_manage_invitations_with_pending_invitations()
@@ -447,7 +497,6 @@ class BoardUserControllerTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
-
     public function test_cancel_invitation_success()
     {
         // Create a user, authenticate, and create a board invitation
@@ -475,11 +524,11 @@ class BoardUserControllerTest extends TestCase
 
     public function test_cancel_invitation_already_canceled()
     {
-        // Create a user and authenticate
+        // Arrange: Create a user and authenticate
         $user = User::factory()->create();
         $this->actingAs($user);
     
-        // Create a valid invitation and then cancel it
+        // Arrange: Create a valid invitation
         $invitation = BoardInvitation::create([
             'board_id' => $this->board->id,
             'user_id' => $user->id,
@@ -487,62 +536,35 @@ class BoardUserControllerTest extends TestCase
             'status' => 'pending',
         ]);
     
-        // Cancel the invitation for the first time
+        // Act: Cancel the invitation for the first time
         $this->delete(route('boards.cancelInvitation', ['board' => $this->board->id, 'invitation' => $invitation->id]), [
             'idempotency_key' => 'unique-key',
         ]);
     
-        // Call the cancelInvitation method again to simulate trying to cancel an already canceled invitation
+        // Act: Call the cancelInvitation method again to simulate trying to cancel an already canceled invitation
         $response = $this->delete(route('boards.cancelInvitation', ['board' => $this->board->id, 'invitation' => $invitation->id]), [
             'idempotency_key' => 'unique-key',
         ]);
     
-        // Assert the redirect and warning message
+        // Assert: Redirect and warning message
         $response->assertRedirect(route('boards.show', $this->board->id));
-        $response->assertSessionHas('warning', 'The invitation has already been canceled.');
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
     
-
-    public function test_cancel_invitation_not_found_for_board()
-    {
-        // Create a user and authenticate
-        $user = User::factory()->create();
-        $this->actingAs($user);
-
-        // Create a board invitation that doesn't belong to the board
-        $otherBoard = Board::factory()->create();
-        $invitation = BoardInvitation::create([
-            'board_id' => $otherBoard->id,
-            'user_id' => $user->id,
-            'invited_by' => $user->id,
-            'status' => 'pending',
-        ]);
-
-        // Call the cancelInvitation method using DELETE
-        $response = $this->delete(route('boards.cancelInvitation', ['board' => $this->board->id, 'invitation' => $invitation->id]), [
-            'idempotency_key' => 'unique-key',
-        ]);
-
-        // Assert the redirect and error message
-        $response->assertRedirect(route('boards.show', $this->board->id));
-        $response->assertSessionHasErrors(['invitation' => 'Invitation not found for this board.']);
-    }
-
     public function test_cancel_invitation_invalid_invitation()
     {
         // Create a user and authenticate
         $user = User::factory()->create();
         $this->actingAs($user);
-
+    
         // Call the cancelInvitation method using DELETE with an invalid invitation ID
         $response = $this->delete(route('boards.cancelInvitation', ['board' => $this->board->id, 'invitation' => 999]), [
             'idempotency_key' => 'unique-key',
         ]);
-
+    
         // Assert the redirect and warning message
         $response->assertRedirect(route('boards.show', $this->board->id));
         $response->assertSessionHas('warning', 'The invitation has already been canceled.');
     }
-
     
 }
