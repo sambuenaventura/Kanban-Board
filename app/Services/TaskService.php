@@ -151,11 +151,8 @@ class TaskService
 
     public function getEditableTask($taskId)
     {
-        // Fetch the task
         $task = $this->taskModel->findOrFail($taskId);
-    
-        $this->authorizeUserForTask($task, auth()->user());
-    
+        
         return $task;
     }
 
