@@ -141,11 +141,18 @@ class TaskController extends Controller
     
     public function destroy(Request $request, $boardId, $taskId)
     {
+        // Get the idempotency key from the request
         $idempotencyKey = $request->input('idempotency_key');
-        
+    
+        // Check if the idempotency key is present
         if (empty($idempotencyKey)) {
-            return redirect()->route('boards.show', ['id' => $boardId])
-                             ->withErrors(['error' => 'Idempotency key is required.']);
+            return redirect()->route('boards.index')->withErrors(['idempotency_key' => 'Idempotency key is required.']);
+        }
+
+        $task = $this->taskService->getTaskById($taskId);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
         }
 
         $result = $this->taskService->deleteTask($taskId, $idempotencyKey);
