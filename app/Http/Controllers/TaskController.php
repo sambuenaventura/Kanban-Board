@@ -85,22 +85,32 @@ class TaskController extends Controller
     
     public function update(UpdateTaskRequest $request, $boardId, $taskId)
     {
-        $response = $this->taskService->updateTask($taskId, $request->validated());
-        
-        if (isset($response['error'])) {
-            return redirect()->route('boards.index')
-                             ->withErrors(['task' => $response['error']]);
-        }
-        
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.tasks.edit', ['boardId' => $boardId, 'taskId' => $taskId])
-                             ->with('warning', $response['warning']);
-        }
-        
-        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
-                         ->with('success', $response['success']);
-    }
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.index')
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
+        }
+    
+        $response = $this->taskService->updateTask($taskId, $request->validated(), $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.index')
+                             ->withErrors(['task' => $response['message']]);
+        }
+    
+        // Handle warning if necessary; adjust this condition based on your implementation
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.tasks.edit', ['boardId' => $boardId, 'taskId' => $taskId])
+                             ->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
+                         ->with('success', $response['message']);
+    }
+     
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
         $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'));
