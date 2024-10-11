@@ -209,44 +209,52 @@ class BoardInvitationService
                                           ->get();
     }
 
-    public function cancelInvitation(Board $board, BoardInvitation $invitation, $idempotencyKey)
+    public function cancelInvitation(Board $board, $invitationId, string $idempotencyKey)
     {
-        // Idempotency check (to prevent duplicate actions)
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'This action has already been processed.'];
-        }
-
-        // Check if the invitation belongs to the correct board
-        if ($invitation->board_id !== $board->id) {
-            return ['error' => 'Invitation not found for this board.'];
-        }
-
-        $userId = $invitation->user_id;
-
-        // Check if the user has already joined the board
-        if ($board->users()->where('users.id', $userId)->exists()) {
-            return ['warning' => 'User has already joined the board. Invitation cannot be canceled.'];
-        }
-
-        // Check if the invitation has been declined
-        if ($invitation->status === 'declined') {
-            return ['warning' => 'User has already declined the invitation. Invitation cannot be canceled.'];
-        }
-
-        // Delete the invitation
-        $invitation->delete();
-
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-
-        broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
-        
-        // Store the idempotency key in the cache
-        $this->cacheIdempotencyKey($idempotencyKey);
-
-        return ['success' => 'Invitation canceled successfully.'];
+        return $this->idempotencyService->process("cancel_invitation_{$invitationId}", $idempotencyKey, function () use ($board, $invitationId) {
+            // Find the invitation by ID
+            $invitation = BoardInvitation::find($invitationId);
+    
+            $userId = $invitation->user_id ?? null;
+    
+            // Check if the user has already joined the board
+            if ($userId !== null && $board->users()->where('users.id', $userId)->exists()) {
+                return [
+                    'status' => 'warning',
+                    'message' => 'User has already joined the board. Invitation cannot be canceled.',
+                ];
+            }
+    
+            // Check if the invitation has been declined
+            if (isset($invitation) && $invitation->status === 'declined') {
+                return [
+                    'status' => 'warning',
+                    'message' => 'User has already declined the invitation. Invitation cannot be canceled.',
+                ];
+            }
+    
+            // Only delete if the invitation exists
+            if (isset($invitation)) {
+                $invitation->delete();
+    
+                // Fetch the updated invitation count for the invitee
+                $invitationCount = $this->userModel->find($userId)->invitationCount();
+    
+                broadcast(new BoardInvitationCount($userId, $invitationCount));
+                broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
+    
+                return [
+                    'status' => 'success',
+                    'message' => 'Invitation canceled successfully.',
+                ];
+            }
+    
+            // Handle the case where the invitation doesn't exist gracefully
+            return [
+                'status' => 'error',
+                'message' => 'No action was taken as the invitation may not exist.',
+            ];
+        });
     }
     
 }
