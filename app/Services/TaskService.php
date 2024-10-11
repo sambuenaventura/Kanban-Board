@@ -98,7 +98,7 @@ class TaskService
         if ($existingTask) {
             return ['warning' => 'A task with this name already exists on this board.'];
         }
-    
+        
         // Retrieve the board_user_id associated with the authenticated user and the board
         $boardUser = $this->boardUserModel->where('board_id', $board->id)
                                            ->where('user_id', auth()->id())
@@ -136,9 +136,6 @@ class TaskService
         // Fetch the task with media (attachments)
         $task = $this->taskModel->with('media')->findOrFail($taskId);
 
-        $this->authorizeUserForTask($task, auth()->user());
-
-        // Fetch the board
         $board = $this->boardModel->findOrFail($boardId);
     
         return [
@@ -156,45 +153,45 @@ class TaskService
         return $task;
     }
 
-    public function updateTask($taskId, array $data)
+    public function updateTask($taskId, array $data, $idempotencyKey)
     {
-        // Find the task by ID
-        $task = Task::find($taskId);
-    
-        if (!$task) {
-            return [
-                'error' => 'Task not found.',
-            ];
-        }
-    
-        $this->authorizeUserForTask($task, auth()->user());
-    
-        // Check if the progress is being updated
-        $progressChanged = $task->progress !== ($data['progress'] ?? null);
+        return $this->idempotencyService->process("update_task_{$taskId}", $idempotencyKey, function () use ($taskId, $data) {
+            
+            $task = $this->getTaskById($taskId);
         
-        // Update the task
-        $task->update($data);
-    
-        // Determine the message based on the progress change
-        $message = 'Task updated successfully.';
-        if ($progressChanged) {
-            switch ($data['progress']) {
-                case 'to_do':
-                    $message = 'Task reopened successfully.';
-                    break;
-                case 'in_progress':
-                    $message = 'Task started successfully.';
-                    break;
-                case 'done':
-                    $message = 'Task completed successfully.';
-                    break;
+            if (!$task) {
+                return [
+                    'error' => 'Task not found.',
+                ];
             }
-        }
-    
-        return [
-            'success' => $message,
-            'task' => $task,
-        ];
+
+            // Check if the progress is being updated
+            $progressChanged = $task->progress !== ($data['progress'] ?? null);
+            
+            $task->update($data);
+        
+            // Determine the message based on the progress change
+            $message = 'Task updated successfully.';
+            if ($progressChanged) {
+                switch ($data['progress']) {
+                    case 'to_do':
+                        $message = 'Task reopened successfully.';
+                        break;
+                    case 'in_progress':
+                        $message = 'Task started successfully.';
+                        break;
+                    case 'done':
+                        $message = 'Task completed successfully.';
+                        break;
+                }
+            }
+        
+            return [
+                'status' => 'success',
+                'message' => $message,
+                'task' => $task,
+            ];
+        });
     }
 
     public function addAttachmentToTask(Task $task, $file)
