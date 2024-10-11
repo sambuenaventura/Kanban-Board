@@ -161,7 +161,8 @@ class TaskService
         
             if (!$task) {
                 return [
-                    'error' => 'Task not found.',
+                    'status' => 'error',
+                    'message' => 'Task not found.',
                 ];
             }
 
@@ -254,7 +255,7 @@ class TaskService
             'message' => 'Task status updated',
         ];
     }
-    
+
     public function deleteAttachment(Task $task, $attachmentId, $idempotencyKey)
     {
         return $this->idempotencyService->process("delete_attachment_{$task->id}", $idempotencyKey, function () use ($task, $attachmentId) {
@@ -264,7 +265,10 @@ class TaskService
     
             // Check if media exists
             if (!$media) {
-                return ['error' => 'Attachment not found.'];
+                return [
+                    'status' => 'error',
+                    'message' => 'Attachment not found.',
+                ];
             }
     
             // Delete the media
