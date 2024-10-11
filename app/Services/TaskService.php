@@ -255,44 +255,26 @@ class TaskService
         ];
     }
     
-    public function deleteAttachment(Task $task, $attachmentId)
+    public function deleteAttachment(Task $task, $attachmentId, $idempotencyKey)
     {
-        $this->authorizeUserForTask($task, auth()->user());
+        return $this->idempotencyService->process("delete_attachment_{$task->id}", $idempotencyKey, function () use ($task, $attachmentId) {
+            
+            // Find the media by attachment ID
+            $media = $task->getMedia('attachments')->find($attachmentId);
     
-        // Find the media by attachment ID
-        $media = $task->getMedia('attachments')->find($attachmentId);
+            // Check if media exists
+            if (!$media) {
+                return ['error' => 'Attachment not found.'];
+            }
     
-        // Check if media exists
-        if (!$media) {
-            return ['error' => 'Attachment not found.'];
-        }
+            // Delete the media
+            $media->delete();
     
-        // Delete the media
-        $media->delete();
-    
-        return [
-            'success' => true,
-            'message' => 'Attachment deleted successfully.',
-        ];
-    }
-    
-    
-    
-    public function authorizeUserForTask(Task $task, $user)
-    {
-        if (!$user->can('isOwnerOrCollaborator', $task)) {
-            abort(403, 'Unauthorized action.');
-        }
+            return [
+                'status' => 'success',
+                'message' => 'Attachment deleted successfully.',
+            ];
+        });
     }
 
-    
-    public function isIdempotencyKeyUsed($idempotencyKey)
-    {
-        return Cache::has('idempotency_' . $idempotencyKey);
-    }
-
-    public function cacheIdempotencyKey($idempotencyKey)
-    {
-        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
-    }
 }
