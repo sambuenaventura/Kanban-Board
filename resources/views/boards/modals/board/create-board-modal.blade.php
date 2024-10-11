@@ -16,7 +16,6 @@
                         <div class="mt-2">
                             <form action="{{ route('boards.store') }}" method="POST" id="boardForm" class="space-y-4">
                                 @csrf
-                                <input type="hidden" name="idempotency_key" value="{{ session('idempotency_key') ?? Str::random(32) }}">
                                 <div class="grid grid-cols-1 gap-4">
                                     <div>
                                         <label for="name" class="block text-sm font-medium text-gray-700">Board name</label>

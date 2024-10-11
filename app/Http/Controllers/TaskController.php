@@ -12,7 +12,9 @@ use App\Http\Requests\UploadFileRequest;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
+use App\Services\BoardService;
 use App\Services\TaskService;
+use App\Traits\IdempotentRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -21,13 +23,15 @@ use Illuminate\Support\Facades\Cache;
 
 class TaskController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, IdempotentRequest;
 
     protected $taskService;
+    protected $boardService;
 
-    public function __construct(TaskService $taskService)
+    public function __construct(TaskService $taskService, BoardService $boardService)
     {
         $this->taskService = $taskService;
+        $this->boardService = $boardService;
     }
 
     public function create($boardId)
@@ -37,12 +41,15 @@ class TaskController extends Controller
     
     public function store(StoreTaskRequest $request)
     {
-        // Retrieve the board
-        $board = Board::findOrFail($request->input('board_id'));
+        try {
+            $board = $this->boardService->getBoardById($request->input('board_id'));
+            $this->authorize('ownerOrCollaborator', $board);
 
-        // Authorize the user to add tasks to the board
-        $this->authorize('view', $board);
-
+        } 
+        catch (ModelNotFoundException $e) {
+            return redirect()->route('boards.index')->withErrors(['board_user' => 'Board not found.']);
+        }
+        
         // Call the service and get the response
         $response = $this->taskService->createTask($board, $request->validated(), $request->idempotency_key);
 
@@ -65,6 +72,12 @@ class TaskController extends Controller
     
     public function show($boardId, $taskId)
     {
+        $task = $this->taskService->getTaskById($taskId);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
         $taskDetails = $this->taskService->getTaskDetails($boardId, $taskId);
 
         return view('boards.tasks.show', [
@@ -77,6 +90,12 @@ class TaskController extends Controller
     
     public function edit($boardId, $taskId)
     {
+        $task = $this->taskService->getTaskById($taskId);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
         $task = $this->taskService->getEditableTask($taskId);
     
         return view('boards.tasks.edit', compact('task', 'boardId'));
@@ -84,25 +103,56 @@ class TaskController extends Controller
     
     public function update(UpdateTaskRequest $request, $boardId, $taskId)
     {
-        $response = $this->taskService->updateTask($taskId, $request->validated());
-        
-        if (isset($response['error'])) {
-            return redirect()->route('boards.index')
-                             ->withErrors(['task' => $response['error']]);
-        }
-        
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.tasks.edit', ['boardId' => $boardId, 'taskId' => $taskId])
-                             ->with('warning', $response['warning']);
-        }
-        
-        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
-                         ->with('success', $response['success']);
-    }
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.index')
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
+        }
+        
+        $task = $this->taskService->getTaskById($taskId);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
+        $response = $this->taskService->updateTask($taskId, $request->validated(), $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.index')
+                             ->withErrors(['task' => $response['message']]);
+        }
+    
+        // Handle warning if necessary; adjust this condition based on your implementation
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.tasks.edit', ['boardId' => $boardId, 'taskId' => $taskId])
+                             ->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.tasks.show', ['boardId' => $boardId, 'taskId' => $response['task']->id])
+                         ->with('success', $response['message']);
+    }
+     
     public function uploadFile(UploadFileRequest $request, Task $task) 
     {
-        $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'));
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
+    
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.show', $task->board_id)
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
+        }
+
+        $task = $this->taskService->getTaskById($task->id);
+
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
+        $response = $this->taskService->addAttachmentToTask($task, $request->file('attachment'), $idempotencyKey);
     
         if (isset($response['error'])) {
             return redirect()->route('boards.show', $task->board_id)
@@ -110,20 +160,34 @@ class TaskController extends Controller
         }
     
         return to_route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
-            ->with('success', $response['success']);
+               ->with('success', $response['message']);
     }
-
-    public function destroy($boardId, $taskId)
+    
+    public function destroy(Request $request, $boardId, $taskId)
     {
-        $response = $this->taskService->deleteTask($taskId);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
-        if (isset($response['error'])) {
-            return redirect()->route('boards.show', ['id' => $boardId])
-                             ->withErrors(['task' => $response['error']]);
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.index')->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
+
+        $task = $this->taskService->getTaskById($taskId);
     
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
+        $result = $this->taskService->deleteTask($taskId, $idempotencyKey);
+
+        if ($result['status'] === 'warning') {
+            return redirect()->route('boards.show', ['id' => $boardId])
+                             ->with('warning', $result['message']);
+        }
+
         return redirect()->route('boards.show', ['id' => $boardId])
-                         ->with('success', $response['success']);
+                         ->with('success', $result['message']);
     }
     
     // js/destroy.js (Deleting a task from a board using the dropdown.)
@@ -146,7 +210,13 @@ class TaskController extends Controller
 
     public function updateStatus(UpdateTaskStatusRequest $request, $taskId)
     {
-        try {
+        $task = $this->taskService->getTaskById($taskId);
+
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+        
+        try {    
             $response = $this->taskService->updateTaskStatus($taskId, $request->input('progress'));
             return response()->json($response);
         } 
@@ -161,17 +231,39 @@ class TaskController extends Controller
         }
     }
 
-    public function destroyFile(Task $task, $attachmentId)
+    public function destroyFile(Request $request, Task $task, $attachmentId)
     {
-        $response = $this->taskService->deleteAttachment($task, $attachmentId);
-
-        if (isset($response['error'])) {
-            return redirect()->back()->withErrors(['attachment' => $response['error']]);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
+    
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->back()->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
-        return redirect()->back()->with('success', $response['message']);
-    }
+        // Retrieve the task
+        $task = $this->taskService->getTaskById($task->id);
     
-
+        // Authorize the action
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+    
+        // Attempt to delete the attachment
+        $response = $this->taskService->deleteAttachment($task, $attachmentId, $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
+                             ->withErrors(['attachment' => $response['message']]);
+        }
+    
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
+                             ->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
+                         ->with('success', $response['message']);
+    }
 
 }

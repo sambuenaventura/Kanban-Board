@@ -17,12 +17,14 @@ class TaskService
     protected $taskModel;
     protected $boardModel;
     protected $boardUserModel;
+    protected $idempotencyService;
 
-    public function __construct(Task $taskModel, Board $boardModel, BoardUser $boardUserModel)
+    public function __construct(Task $taskModel, Board $boardModel, BoardUser $boardUserModel, IdempotencyService $idempotencyService)
     {
         $this->taskModel = $taskModel;
         $this->boardModel = $boardModel;
         $this->boardUserModel = $boardUserModel;
+        $this->idempotencyService = $idempotencyService;
     }
 
     public function getAllTags($board)
@@ -36,6 +38,12 @@ class TaskService
     public function getUserTasks($board)
     {
         return $board->tasks;
+    }
+    
+    public function getTaskById(string $id)
+    {
+        return $this->taskModel->find($id);
+
     }
     
     public function getTaskByProgress($tasks, $progress)
@@ -83,11 +91,6 @@ class TaskService
     
     public function createTask(Board $board, array $data, string $idempotencyKey)
     {
-        // Idempotency check (to prevent duplicate actions)
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'Task has already been created.'];
-        }
-    
         // Check if a task with the same name already exists
         $existingTask = $this->taskModel->where('name', $data['name'])
                                          ->where('board_id', $board->id)
@@ -95,7 +98,7 @@ class TaskService
         if ($existingTask) {
             return ['warning' => 'A task with this name already exists on this board.'];
         }
-    
+        
         // Retrieve the board_user_id associated with the authenticated user and the board
         $boardUser = $this->boardUserModel->where('board_id', $board->id)
                                            ->where('user_id', auth()->id())
@@ -125,9 +128,6 @@ class TaskService
     
         broadcast(new BoardTaskCreated($task));
     
-        // Store the idempotency key in the cache to prevent duplicate processing
-        $this->cacheIdempotencyKey($idempotencyKey);
-    
         return ['success' => 'Task created successfully.', 'task' => $task];
     }
 
@@ -136,9 +136,6 @@ class TaskService
         // Fetch the task with media (attachments)
         $task = $this->taskModel->with('media')->findOrFail($taskId);
 
-        $this->authorizeUserForTask($task, auth()->user());
-
-        // Fetch the board
         $board = $this->boardModel->findOrFail($boardId);
     
         return [
@@ -151,92 +148,87 @@ class TaskService
 
     public function getEditableTask($taskId)
     {
-        // Fetch the task
         $task = $this->taskModel->findOrFail($taskId);
-    
-        $this->authorizeUserForTask($task, auth()->user());
-    
+        
         return $task;
     }
 
-    public function updateTask($taskId, array $data)
+    public function updateTask($taskId, array $data, $idempotencyKey)
     {
-        // Find the task by ID
-        $task = Task::find($taskId);
-    
-        if (!$task) {
-            return [
-                'error' => 'Task not found.',
-            ];
-        }
-    
-        $this->authorizeUserForTask($task, auth()->user());
-    
-        // Check if the progress is being updated
-        $progressChanged = $task->progress !== ($data['progress'] ?? null);
+        return $this->idempotencyService->process("update_task_{$taskId}", $idempotencyKey, function () use ($taskId, $data) {
+            
+            $task = $this->getTaskById($taskId);
         
-        // Update the task
-        $task->update($data);
-    
-        // Determine the message based on the progress change
-        $message = 'Task updated successfully.';
-        if ($progressChanged) {
-            switch ($data['progress']) {
-                case 'to_do':
-                    $message = 'Task reopened successfully.';
-                    break;
-                case 'in_progress':
-                    $message = 'Task started successfully.';
-                    break;
-                case 'done':
-                    $message = 'Task completed successfully.';
-                    break;
+            if (!$task) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Task not found.',
+                ];
             }
-        }
-    
-        return [
-            'success' => $message,
-            'task' => $task,
-        ];
+
+            // Check if the progress is being updated
+            $progressChanged = $task->progress !== ($data['progress'] ?? null);
+            
+            $task->update($data);
+        
+            // Determine the message based on the progress change
+            $message = 'Task updated successfully.';
+            if ($progressChanged) {
+                switch ($data['progress']) {
+                    case 'to_do':
+                        $message = 'Task reopened successfully.';
+                        break;
+                    case 'in_progress':
+                        $message = 'Task started successfully.';
+                        break;
+                    case 'done':
+                        $message = 'Task completed successfully.';
+                        break;
+                }
+            }
+        
+            return [
+                'status' => 'success',
+                'message' => $message,
+                'task' => $task,
+            ];
+        });
     }
 
-    public function addAttachmentToTask(Task $task, $file)
+    public function addAttachmentToTask(Task $task, $file, $idempotencyKey)
     {
-        $this->authorizeUserForTask($task, auth()->user());
+        return $this->idempotencyService->process("add_attachment_{$task->id}", $idempotencyKey, function () use ($task, $file) {
     
-        // Add media to task
-        $task->addMedia($file)->toMediaCollection('attachments');
+            // Add media to task
+            $task->addMedia($file)->toMediaCollection('attachments');
     
-        return [
-            'success' => 'Attachment uploaded successfully.',
-        ];
+            return [
+                'status' => 'success',
+                'message' => 'Attachment uploaded successfully.',
+            ];
+        });
     }
 
-    public function deleteTask($taskId)
+    public function deleteTask(string $id, string $idempotencyKey)
     {
-        $task = $this->taskModel->findOrFail($taskId);
-
-        $this->authorizeUserForTask($task, auth()->user());
-
-        $task->delete();
-
-        return [
-            'success' => 'Task deleted successfully.',
-            'taskId' => $taskId,
-        ];
+        return $this->idempotencyService->process("delete_task_{$id}", $idempotencyKey, function () use ($id) 
+            {
+                $task = $this->taskModel->findOrFail($id);
+                $task->delete();
+                return [
+                    'status' => 'success',
+                    'message' => 'Task deleted successfully.',
+                ];
+            }
+        );
     }
     
     public function deleteTaskAjax($id)
     {
-        // Find the task by ID
         $task = $this->taskModel->findOrFail($id);
-    
-        $this->authorizeUserForTask($task, auth()->user());
-    
-        // Get the board ID before deleting the task
+        
         $boardId = $task->board_id;
     
-        // Delete the task
         $task->delete();
     
         // Dispatch the TaskDeleted event
@@ -252,61 +244,41 @@ class TaskService
     public function updateTaskStatus($id, $progress)
     {
         $task = $this->taskModel->findOrFail($id);
-
-        $this->authorizeUserForTask($task, auth()->user());
-
-        // Update the task progress
+    
         $task->progress = $progress;
         $task->save();
-
-        // Dispatch the BoardTaskUpdated event
+    
         broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
-
+    
         return [
             'success' => true,
             'message' => 'Task status updated',
         ];
-    
-    }
-    
-    public function deleteAttachment(Task $task, $attachmentId)
-    {
-        $this->authorizeUserForTask($task, auth()->user());
-    
-        // Find the media by attachment ID
-        $media = $task->getMedia('attachments')->find($attachmentId);
-    
-        // Check if media exists
-        if (!$media) {
-            return ['error' => 'Attachment not found.'];
-        }
-    
-        // Delete the media
-        $media->delete();
-    
-        return [
-            'success' => true,
-            'message' => 'Attachment deleted successfully.',
-        ];
-    }
-    
-    
-    
-    public function authorizeUserForTask(Task $task, $user)
-    {
-        if (!$user->can('isOwnerOrCollaborator', $task)) {
-            abort(403, 'Unauthorized action.');
-        }
     }
 
-    
-    public function isIdempotencyKeyUsed($idempotencyKey)
+    public function deleteAttachment(Task $task, $attachmentId, $idempotencyKey)
     {
-        return Cache::has('idempotency_' . $idempotencyKey);
+        return $this->idempotencyService->process("delete_attachment_{$task->id}", $idempotencyKey, function () use ($task, $attachmentId) {
+            
+            // Find the media by attachment ID
+            $media = $task->getMedia('attachments')->find($attachmentId);
+    
+            // Check if media exists
+            if (!$media) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Attachment not found.',
+                ];
+            }
+    
+            // Delete the media
+            $media->delete();
+    
+            return [
+                'status' => 'success',
+                'message' => 'Attachment deleted successfully.',
+            ];
+        });
     }
 
-    public function cacheIdempotencyKey($idempotencyKey)
-    {
-        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
-    }
 }

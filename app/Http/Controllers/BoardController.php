@@ -12,15 +12,15 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\BoardService;
 use App\Services\TaskService;
+use App\Traits\IdempotentRequest;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 class BoardController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, IdempotentRequest;
 
     protected $boardService;
     protected $taskService;
@@ -58,7 +58,6 @@ class BoardController extends Controller
         return view('boards.create');
     }
 
-
     public function store(StoreBoardRequest $request)
     {
         // Create a new board with the validated data
@@ -70,7 +69,6 @@ class BoardController extends Controller
         // Redirect to boards index or other relevant route
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
-
 
     public function show($id, Request $request)
     {
@@ -178,7 +176,6 @@ class BoardController extends Controller
         return view('boards.edit', compact('board'));
     }
 
-
     public function update(UpdateBoardRequest $request, $id)
     {
         $board = Board::findOrFail($id);
@@ -190,41 +187,29 @@ class BoardController extends Controller
         return redirect()->route('boards.index')->with('success', 'Board updated successfully.');
     }
     
-    
     public function destroy(Request $request, $id)
     {
-        // Check if the request is a duplicate using the idempotency key
-        if ($this->isAlreadyDeleted($request->idempotency_key)) {
-            return redirect()->route('boards.index')->with('warning', 'The board has already been deleted.');
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
+    
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.index')->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
-        // Find the board only if it's not already deleted
-        $board = $this->findBoardOrFail($id);
-        
-        $this->authorize('delete', $board);
+        $board = $this->boardService->getBoardById($id);
     
-        // Proceed with deleting the board
-        $board->delete();
+        if ($board) {
+            $this->authorize('owner', $board);
+        }
     
-        // Cache the idempotency key to prevent future duplicate deletes
-        $this->cacheIdempotencyKey($request->idempotency_key);
+        $result = $this->boardService->deleteBoard($id, $idempotencyKey);
     
-        return redirect()->route('boards.index')->with('success', 'Board deleted successfully.');
+        if ($result['status'] === 'warning') {
+            return redirect()->route('boards.index')->with('warning', $result['message']);
+        }
+    
+        return redirect()->route('boards.index')->with('success', $result['message']);
     }
     
-
-    protected function findBoardOrFail($id)
-    {
-        return Board::findOrFail($id);
-    }
-    
-    protected function isAlreadyDeleted($idempotencyKey)
-    {
-        return Cache::has('idempotency_' . $idempotencyKey);
-    }
-
-    protected function cacheIdempotencyKey($idempotencyKey)
-    {
-        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
-    }
 }
