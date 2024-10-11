@@ -224,15 +224,10 @@ class TaskService
     
     public function deleteTaskAjax($id)
     {
-        // Find the task by ID
         $task = $this->taskModel->findOrFail($id);
-    
-        $this->authorizeUserForTask($task, auth()->user());
-    
-        // Get the board ID before deleting the task
+        
         $boardId = $task->board_id;
     
-        // Delete the task
         $task->delete();
     
         // Dispatch the TaskDeleted event
