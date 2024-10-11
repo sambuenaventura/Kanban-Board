@@ -11,6 +11,7 @@ use App\Models\BoardUser;
 use App\Models\Task;
 use App\Services\BoardService;
 use App\Events\BoardCreated;
+use App\Services\IdempotencyService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Event;
 
@@ -30,6 +31,7 @@ class BoardControllerTest extends TestCase
         $boardUserModel = new BoardUser();
         $userModel = new User();
         $boardInvitationModel = new BoardInvitation();
+        $idempotencyService = new IdempotencyService();
 
         // Initialize the BoardService with model instances
         $this->boardService = new BoardService(
@@ -37,7 +39,8 @@ class BoardControllerTest extends TestCase
             $taskModel,
             $boardUserModel,
             $userModel,
-            $boardInvitationModel
+            $boardInvitationModel,
+            $idempotencyService,
         );
     }
 
@@ -250,7 +253,6 @@ class BoardControllerTest extends TestCase
             return $event->board->name === $data['name'] && $event->board->user_id === $user->id;
         });
     }
-    
 
     public function test_show_returns_board_view()
     {
@@ -994,8 +996,14 @@ class BoardControllerTest extends TestCase
         // Act: Authenticate the user
         $this->actingAs($user);
     
-        // Act: Send a delete request for the first time with a unique idempotency key
-        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id), [
+        // Act: Attempt to delete without providing an idempotency key
+        $response = $this->delete(route('boards.destroy', $board->id), []);
+    
+        // Assert: Ensure the response is redirected back with a validation error for 'idempotency_key'
+        $response->assertSessionHasErrors(['idempotency_key']);
+    
+        // Act: Send a delete request with a unique idempotency key
+        $response = $this->delete(route('boards.destroy', $board->id), [
             'idempotency_key' => 'unique_key_123'
         ]);
     
@@ -1003,16 +1011,15 @@ class BoardControllerTest extends TestCase
         $this->assertDatabaseMissing('boards', ['id' => $board->id]);
     
         // Act: Attempt to delete again with the same idempotency key
-        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id), [
+        $response = $this->delete(route('boards.destroy', $board->id), [
             'idempotency_key' => 'unique_key_123'
         ]);
     
-        // Assert: Ensure the response is redirected with a warning message
+        // Assert: Ensure the response is redirected with the correct warning message
         $response->assertRedirect(route('boards.index'));
-        $response->assertSessionHas('warning', 'The board has already been deleted.');
+        $response->assertSessionHas('warning', 'This operation has already been processed.');
     }
     
-
     public function test_unauthorized_user_cannot_delete_board()
     {
         // Create two users: one as the board owner and one unauthorized
@@ -1038,17 +1045,17 @@ class BoardControllerTest extends TestCase
     {
         // Create a user
         $user = User::factory()->create();
-
+    
         // Act: Authenticate the user
         $this->actingAs($user);
-
+    
         // Act: Attempt to delete a non-existent board
-        $response = $this->withoutMiddleware()->delete(route('boards.destroy', 9999), [
+        $response = $this->delete(route('boards.destroy', 9999), [
             'idempotency_key' => 'unique_key_123'
         ]);
-
-        // Assert: The response should be a 404 Not Found
-        $response->assertNotFound();
+    
+        // Assert: Ensure the response is a 404 status
+        $response->assertStatus(404);
     }
 
     public function test_destroy_board_without_idempotency_key()
@@ -1061,15 +1068,14 @@ class BoardControllerTest extends TestCase
         $this->actingAs($user);
     
         // Act: Send a delete request without an idempotency key
-        $response = $this->withoutMiddleware()->delete(route('boards.destroy', $board->id));
+        $response = $this->delete(route('boards.destroy', $board->id));
     
-        // Assert: Redirected with success message
+        // Assert: Redirected to boards.index with an error message
         $response->assertRedirect(route('boards.index'));
-        $response->assertSessionHas('success', 'Board deleted successfully.');
+        $response->assertSessionHasErrors(['idempotency_key' => 'Idempotency key is required.']);
     
-        // Assert: The board is deleted from the database
-        $this->assertDatabaseMissing('boards', ['id' => $board->id]);
+        // Assert: The board still exists in the database
+        $this->assertDatabaseHas('boards', ['id' => $board->id]);
     }
     
-
 }
