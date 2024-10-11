@@ -194,16 +194,18 @@ class TaskService
         });
     }
 
-    public function addAttachmentToTask(Task $task, $file)
+    public function addAttachmentToTask(Task $task, $file, $idempotencyKey)
     {
-        $this->authorizeUserForTask($task, auth()->user());
+        return $this->idempotencyService->process("add_attachment_{$task->id}", $idempotencyKey, function () use ($task, $file) {
     
-        // Add media to task
-        $task->addMedia($file)->toMediaCollection('attachments');
+            // Add media to task
+            $task->addMedia($file)->toMediaCollection('attachments');
     
-        return [
-            'success' => 'Attachment uploaded successfully.',
-        ];
+            return [
+                'status' => 'success',
+                'message' => 'Attachment uploaded successfully.',
+            ];
+        });
     }
 
     public function deleteTask(string $id, string $idempotencyKey)
