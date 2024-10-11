@@ -16,12 +16,16 @@ class BoardInvitationService
 {
     protected $boardInvitationModel;
     protected $boardUserModel;
+    protected $userModel;
+    protected $idempotencyService;
 
     // Inject the models through the constructor
-    public function __construct(BoardInvitation $boardInvitationModel, BoardUser $boardUserModel)
+    public function __construct(BoardInvitation $boardInvitationModel, BoardUser $boardUserModel, User $userModel, IdempotencyService $idempotencyService)
     {
         $this->boardInvitationModel = $boardInvitationModel;
         $this->boardUserModel = $boardUserModel;
+        $this->userModel = $userModel;
+        $this->idempotencyService = $idempotencyService;
     }
 
     public function removeUserFromBoard($board, $user, $idempotencyKey)
