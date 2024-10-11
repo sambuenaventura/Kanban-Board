@@ -215,7 +215,23 @@ class BoardInvitationService
             // Find the invitation by ID
             $invitation = BoardInvitation::find($invitationId);
     
+            if (!$invitation) {
+                // Return warning if the invitation does not exist
+                return [
+                    'status' => 'warning',
+                    'message' => 'The invitation has already been canceled.',
+                ];
+            }
+    
             $userId = $invitation->user_id ?? null;
+    
+            // Check if the invitation belongs to the specified board
+            if ($invitation->board_id !== $board->id) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Invitation not found for this board.',
+                ];
+            }
     
             // Check if the user has already joined the board
             if ($userId !== null && $board->users()->where('users.id', $userId)->exists()) {
@@ -226,33 +242,25 @@ class BoardInvitationService
             }
     
             // Check if the invitation has been declined
-            if (isset($invitation) && $invitation->status === 'declined') {
+            if ($invitation->status === 'declined') {
                 return [
                     'status' => 'warning',
                     'message' => 'User has already declined the invitation. Invitation cannot be canceled.',
                 ];
             }
     
-            // Only delete if the invitation exists
-            if (isset($invitation)) {
-                $invitation->delete();
+            // Delete the invitation if it exists
+            $invitation->delete();
     
-                // Fetch the updated invitation count for the invitee
-                $invitationCount = $this->userModel->find($userId)->invitationCount();
+            // Fetch the updated invitation count for the invitee
+            $invitationCount = $this->userModel->find($userId)->invitationCount();
     
-                broadcast(new BoardInvitationCount($userId, $invitationCount));
-                broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
+            broadcast(new BoardInvitationCount($userId, $invitationCount));
+            broadcast(new BoardInvitationDetailsCanceled($userId, $invitation->id));
     
-                return [
-                    'status' => 'success',
-                    'message' => 'Invitation canceled successfully.',
-                ];
-            }
-    
-            // Handle the case where the invitation doesn't exist gracefully
             return [
-                'status' => 'error',
-                'message' => 'No action was taken as the invitation may not exist.',
+                'status' => 'success',
+                'message' => 'Invitation canceled successfully.',
             ];
         });
     }
