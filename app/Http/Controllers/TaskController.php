@@ -12,6 +12,7 @@ use App\Http\Requests\UploadFileRequest;
 use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
+use App\Services\BoardService;
 use App\Services\TaskService;
 use App\Traits\IdempotentRequest;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -25,10 +26,12 @@ class TaskController extends Controller
     use AuthorizesRequests, IdempotentRequest;
 
     protected $taskService;
+    protected $boardService;
 
-    public function __construct(TaskService $taskService)
+    public function __construct(TaskService $taskService, BoardService $boardService)
     {
         $this->taskService = $taskService;
+        $this->boardService = $boardService;
     }
 
     public function create($boardId)
@@ -38,12 +41,15 @@ class TaskController extends Controller
     
     public function store(StoreTaskRequest $request)
     {
-        // Retrieve the board
-        $board = Board::findOrFail($request->input('board_id'));
+        try {
+            $board = $this->boardService->getBoardById($request->input('board_id'));
+            $this->authorize('ownerOrCollaborator', $board);
 
-        // Authorize the user to add tasks to the board
-        $this->authorize('ownerOrCollaborator', $board);
-
+        } 
+        catch (ModelNotFoundException $e) {
+            return redirect()->route('boards.index')->withErrors(['board_user' => 'Board not found.']);
+        }
+        
         // Call the service and get the response
         $response = $this->taskService->createTask($board, $request->validated(), $request->idempotency_key);
 
@@ -66,6 +72,12 @@ class TaskController extends Controller
     
     public function show($boardId, $taskId)
     {
+        $task = $this->taskService->getTaskById($taskId);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
         $taskDetails = $this->taskService->getTaskDetails($boardId, $taskId);
 
         return view('boards.tasks.show', [
@@ -78,6 +90,12 @@ class TaskController extends Controller
     
     public function edit($boardId, $taskId)
     {
+        $task = $this->taskService->getTaskById($taskId);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
         $task = $this->taskService->getEditableTask($taskId);
     
         return view('boards.tasks.edit', compact('task', 'boardId'));
@@ -93,7 +111,13 @@ class TaskController extends Controller
             return redirect()->route('boards.index')
                              ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
+        
+        $task = $this->taskService->getTaskById($taskId);
     
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+
         $response = $this->taskService->updateTask($taskId, $request->validated(), $idempotencyKey);
     
         if ($response['status'] === 'error') {
