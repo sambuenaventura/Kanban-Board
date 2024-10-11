@@ -28,17 +28,10 @@ class BoardInvitationService
         $this->idempotencyService = $idempotencyService;
     }
 
-    public function removeUserFromBoard($board, $user, $idempotencyKey)
+    public function getInvitationById($id)
     {
-        // Idempotency check (to prevent duplicate actions)
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'This action has already been processed.'];
-        }
-    
-        // Check if the user is a collaborator before attempting to detach
-        if (!$board->users()->where('user_id', $user->id)->exists()) {
-            return ['error' => 'User is not a collaborator on this board.'];
-        }
+        return $this->boardInvitationModel->find($id);
+    }
     
         // Detach the user from the board
         $board->users()->detach($user->id);
