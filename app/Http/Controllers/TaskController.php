@@ -241,23 +241,29 @@ class TaskController extends Controller
             return redirect()->back()->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
+        // Retrieve the task
         $task = $this->taskService->getTaskById($task->id);
     
+        // Authorize the action
         if ($task) {
             $this->authorize('ownerOrCollaborator', $task);
         }
     
+        // Attempt to delete the attachment
         $response = $this->taskService->deleteAttachment($task, $attachmentId, $idempotencyKey);
     
         if ($response['status'] === 'error') {
-            return redirect()->back()->withErrors(['attachment' => $response['message']]);
+            return redirect()->route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
+                             ->withErrors(['attachment' => $response['message']]);
         }
     
         if ($response['status'] === 'warning') {
-            return redirect()->back()->with('warning', $response['message']);
+            return redirect()->route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
+                             ->with('warning', $response['message']);
         }
     
-        return redirect()->back()->with('success', $response['message']);
+        return redirect()->route('boards.tasks.show', ['boardId' => $task->board_id, 'taskId' => $task->id])
+                         ->with('success', $response['message']);
     }
 
 }
