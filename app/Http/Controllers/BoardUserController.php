@@ -111,17 +111,26 @@ class BoardUserController extends Controller
     
     public function declineInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
     {
-        $response = $this->boardInvitationService->declineInvitation($invitation, $request->idempotency_key);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
-        if (isset($response['error'])) {
-            return redirect()->route('boards.index')->withErrors(['user' => $response['error']]);
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.index')
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
-
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.index')->with('warning', $response['warning']);
+    
+        $response = $this->boardInvitationService->declineInvitation($invitation, $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.index')->withErrors(['user' => $response['message']]);
         }
-
-        return redirect()->route('boards.index')->with('success', $response['success']);
+    
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.index')->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.index')->with('success', $response['message']);
     }
     
     public function manageInvitations()
