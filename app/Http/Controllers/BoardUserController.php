@@ -81,17 +81,32 @@ class BoardUserController extends Controller
 
     public function acceptInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
     {
-        $response = $this->boardInvitationService->acceptInvitation($invitation, $request->idempotency_key);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
-        if (isset($response['error'])) {
-            return redirect()->route('boards.show', $invitation->board_id)->withErrors(['user' => $response['error']]);
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->route('boards.show', $invitation->board_id)
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.show', $invitation->board_id)->with('warning', $response['warning']);
+        // Ensure the authenticated user is the invitee
+        if ($invitation->user_id !== auth()->id()) {
+            return redirect()->route('boards.show', $invitation->board_id)
+                             ->withErrors(['user' => 'Unauthorized action.']);
         }
     
-        return redirect()->route('boards.show', $invitation->board_id)->with('success', $response['success']);
+        $response = $this->boardInvitationService->acceptInvitation($invitation, $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.show', $invitation->board_id)->withErrors(['user' => $response['message']]);
+        }
+    
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.show', $invitation->board_id)->with('warning', $response['message']);
+        }
+    
+        return redirect()->route('boards.show', $invitation->board_id)->with('success', $response['message']);
     }
     
     public function declineInvitation(ProcessInvitationRequest $request, BoardInvitation $invitation)
