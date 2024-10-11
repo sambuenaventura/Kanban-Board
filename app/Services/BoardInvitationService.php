@@ -166,35 +166,39 @@ class BoardInvitationService
         });
     }
 
-    public function declineInvitation(BoardInvitation $invitation, $idempotencyKey)
+    public function declineInvitation(BoardInvitation $invitation, string $idempotencyKey)
     {
-        // Idempotency check (to prevent duplicate actions)
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'This action has already been processed.'];
-        }
-        
-        // Check if the invitation is already declined
-        if ($invitation->status === 'declined') {
+        return $this->idempotencyService->process("decline_invitation_{$invitation->id}", $idempotencyKey, function () use ($invitation) {
+            // Check if the invitation is already declined
+            if ($invitation->status === 'declined') {
+                return [
+                    'status' => 'error',
+                    'message' => 'This invitation has already been declined.',
+                ];
+            }
+    
+            // Ensure the authenticated user is the invitee
+            if ($invitation->user_id !== auth()->id()) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Unauthorized action.',
+                ];
+            }
+    
+            // Update invitation status to declined
+            $invitation->update(['status' => 'declined']);
+    
+            // Fetch the updated invitation count for the invitee
+            $invitationCount = $this->userModel->find($invitation->user_id)->invitationCount();
+    
+            // Broadcast the updated invitation count
+            broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+    
             return [
-                'error' => 'This invitation has already been declined.'
+                'status' => 'success',
+                'message' => 'You declined the invitation.',
             ];
-        }
-
-        // Ensure the authenticated user is the invitee
-        if ($invitation->user_id !== auth()->id()) {
-            return ['error' => 'Unauthorized action.'];
-        }
-
-        // Update invitation status to declined
-        $invitation->update(['status' => 'declined']);
-
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-        
-        return ['success' => 'You declined the invitation.'];
+        });
     }
 
     public function getPendingInvitationsForUser($userId)
