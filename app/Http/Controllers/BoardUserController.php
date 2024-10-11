@@ -140,37 +140,28 @@ class BoardUserController extends Controller
         return view('boards.manage-invitations', compact('pendingInvitations'));
     }
     
-    public function cancelInvitation(ProcessInvitationRequest $request, Board $board, $invitation)
+    public function cancelInvitation(ProcessInvitationRequest $request, Board $board, $invitationId)
     {
-        // If $invitation is already a model instance, use it directly
-        if (!($invitation instanceof BoardInvitation)) {
-            $invitation = BoardInvitation::find($invitation);
-        }
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
     
-        // Check if the invitation was found
-        if (!$invitation) {
-            // Treat as a successful idempotent operation
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
             return redirect()->route('boards.show', $board->id)
-                ->with('warning', 'The invitation has already been canceled.');
+                             ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
-        // Check if the invitation belongs to the correct board
-        if ($invitation->board_id !== $board->id) {
-            return redirect()->route('boards.show', $board->id)->withErrors(['invitation' => 'Invitation not found for this board.']);
+        $response = $this->boardInvitationService->cancelInvitation($board, $invitationId, $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['message']]);
         }
     
-        $response = $this->boardInvitationService->cancelInvitation($board, $invitation, $request->idempotency_key);
-        
-        if (isset($response['error'])) {
-            return redirect()->route('boards.show', $board->id)->withErrors(['user' => $response['error']]);
+        if ($response['status'] === 'warning') {
+            return redirect()->route('boards.show', $board->id)->with('warning', $response['message']);
         }
     
-        if (isset($response['warning'])) {
-            return redirect()->route('boards.show', $board->id)->with('warning', $response['warning']);
-        }
-    
-        return redirect()->route('boards.show', $board->id)->with('success', $response['success']);
+        return redirect()->route('boards.show', $board->id)->with('success', $response['message']);
     }
-    
 
 }
