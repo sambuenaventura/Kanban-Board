@@ -57,70 +57,59 @@ class BoardInvitationService
         });
     }
     
+    public function inviteUser(Board $board, $userId, string $idempotencyKey)
     {
-        // Check if the idempotency key is already used
-        if ($this->isIdempotencyKeyUsed($idempotencyKey)) {
-            return ['warning' => 'An invitation has already been sent to this user.'];
-        }
-
-        // Check if the user is already a collaborator on the board
-        $isCollaborator = BoardUser::where('board_id', $boardId)
-            ->where('user_id', $userId)
-            ->exists();
-
-        if ($isCollaborator) {
-            return ['error' => 'This user is already a collaborator on the board.'];
-        }
-
-        // Check if the user already has a pending invitation
-        $existingInvite = BoardInvitation::where('board_id', $boardId)
-            ->where('user_id', $userId)
-            ->where('status', 'pending')
-            ->first();
-
-        if ($existingInvite) {
-            return ['warning' => 'An invitation has already been sent to this user.'];
-        }
-
-        // Send the invitation
-        $invitation = BoardInvitation::create([
-            'board_id' => $boardId,
-            'user_id' => $userId,
-            'invited_by' => auth()->id(),
-            'status' => 'pending',
-        ]);
-
-        // Fetch the updated invitation count for the invitee
-        $invitationCount = User::find($invitation->user_id)->invitationCount();
-
-        // Broadcast the updated invitation count
-        broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
-
-        // Prepare and broadcast the invitation details
-        $invitationDetails = [
-            'id' => $invitation->id,
-            'board' => ['name' => $invitation->board->name],
-            'inviter' => ['name' => auth()->user()->name],
-            'created_at' => $invitation->created_at,
-        ];
-
-        broadcast(new BoardInvitationDetailsSent($userId, $invitationDetails));
-
-        // Store the idempotency key in the cache
-        $this->cacheIdempotencyKey($idempotencyKey);
-
-        // Return success response
-        return ['success' => 'Invitation sent successfully.'];
-    }
-
-    public function isIdempotencyKeyUsed($idempotencyKey)
-    {
-        return Cache::has('idempotency_' . $idempotencyKey);
-    }
-
-    public function cacheIdempotencyKey($idempotencyKey)
-    {
-        Cache::put('idempotency_' . $idempotencyKey, true, 86400);
+        return $this->idempotencyService->process("invite_user_{$userId}", $idempotencyKey, function () use ($board, $userId) {
+            // Check if the user is already a collaborator on the board
+            if ($board->users()->where('users.id', $userId)->exists()) {
+                return [
+                    'status' => 'error',
+                    'message' => 'This user is already a collaborator on the board.',
+                ];
+            }
+    
+            // Check if the user already has a pending invitation
+            $existingInvite = BoardInvitation::where('board_id', $board->id)
+                ->where('user_id', $userId)
+                ->where('status', 'pending')
+                ->first();
+    
+            if ($existingInvite) {
+                return [
+                    'status' => 'warning',
+                    'message' => 'An invitation has already been sent to this user.',
+                ];
+            }
+    
+            // Send the invitation
+            $invitation = BoardInvitation::create([
+                'board_id' => $board->id,
+                'user_id' => $userId,
+                'invited_by' => auth()->id(),
+                'status' => 'pending',
+            ]);
+    
+            // Fetch the updated invitation count for the invitee
+            $invitationCount = $this->userModel->find($invitation->user_id)->invitationCount();
+    
+            // Broadcast the updated invitation count
+            broadcast(new BoardInvitationCount($invitation->user_id, $invitationCount));
+    
+            // Prepare and broadcast the invitation details
+            $invitationDetails = [
+                'id' => $invitation->id,
+                'board' => ['name' => $invitation->board->name],
+                'inviter' => ['name' => auth()->user()->name],
+                'created_at' => $invitation->created_at,
+            ];
+    
+            broadcast(new BoardInvitationDetailsSent($userId, $invitationDetails));
+    
+            return [
+                'status' => 'success',
+                'message' => 'Invitation sent successfully.',
+            ];
+        });
     }
 
     public function acceptInvitation(BoardInvitation $invitation, $idempotencyKey)
