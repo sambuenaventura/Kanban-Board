@@ -243,21 +243,16 @@ class TaskService
     public function updateTaskStatus($id, $progress)
     {
         $task = $this->taskModel->findOrFail($id);
-
-        $this->authorizeUserForTask($task, auth()->user());
-
-        // Update the task progress
+    
         $task->progress = $progress;
         $task->save();
-
-        // Dispatch the BoardTaskUpdated event
+    
         broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
-
+    
         return [
             'success' => true,
             'message' => 'Task status updated',
         ];
-    
     }
     
     public function deleteAttachment(Task $task, $attachmentId)
