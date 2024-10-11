@@ -207,12 +207,30 @@ class TaskController extends Controller
         }
     }
 
-    public function destroyFile(Task $task, $attachmentId)
+    public function destroyFile(Request $request, Task $task, $attachmentId)
     {
-        $response = $this->taskService->deleteAttachment($task, $attachmentId);
-
-        if (isset($response['error'])) {
-            return redirect()->back()->withErrors(['attachment' => $response['error']]);
+        // Get the idempotency key from the request
+        $idempotencyKey = $request->input('idempotency_key');
+    
+        // Check if the idempotency key is present
+        if (empty($idempotencyKey)) {
+            return redirect()->back()->withErrors(['idempotency_key' => 'Idempotency key is required.']);
+        }
+    
+        $task = $this->taskService->getTaskById($task->id);
+    
+        if ($task) {
+            $this->authorize('ownerOrCollaborator', $task);
+        }
+    
+        $response = $this->taskService->deleteAttachment($task, $attachmentId, $idempotencyKey);
+    
+        if ($response['status'] === 'error') {
+            return redirect()->back()->withErrors(['attachment' => $response['message']]);
+        }
+    
+        if ($response['status'] === 'warning') {
+            return redirect()->back()->with('warning', $response['message']);
         }
     
         return redirect()->back()->with('success', $response['message']);
