@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
 use Tests\TestCase;
 
 class TaskControllerTest extends TestCase
@@ -19,6 +20,7 @@ class TaskControllerTest extends TestCase
     protected $user;
     protected $collaborator;
     protected $board;
+    protected $nonCollaborator;
 
     protected function setUp(): void
     {
@@ -29,6 +31,9 @@ class TaskControllerTest extends TestCase
 
         // Create a collaborator user
         $this->collaborator = User::factory()->create();
+
+        // Create a non-collaborator user
+        $this->nonCollaborator = User::factory()->create();
 
         // Create a board and associate it with the user (owner)
         $this->board = Board::factory()->create(['user_id' => $this->user->id]);
@@ -71,7 +76,7 @@ class TaskControllerTest extends TestCase
         ]);
     }
 
-    public function test_unauthorized_user_cannot_store_task()
+    public function test_store_unauthorized_user_cannot_create_task()
     {
         // Create a new user who is not associated with the board
         $unauthorizedUser = User::factory()->create();
@@ -119,7 +124,6 @@ class TaskControllerTest extends TestCase
         $response->assertSessionHasErrors(['name', 'due', 'priority', 'progress', 'tag', 'idempotency_key']);
 
         $this->assertCount(6, session('errors')); // Checks for total number of errors in session
-
     }
 
     public function test_store_task_with_duplicate_idempotency_key()
@@ -145,8 +149,8 @@ class TaskControllerTest extends TestCase
         // Attempt to create the task again with the same idempotency key
         $response = $this->post(route('boards.tasks.store', ['boardId' => $this->board->id]), $data);
     
-        // Assert that the response redirects with a success message (or appropriate response)
-        $response->assertSessionHas('warning', 'Task has already been created.');
+        // Assert that the response redirects with a message
+        $response->assertSessionHas('warning', 'A task with this name already exists on this board.');
         $this->assertDatabaseCount('tasks', 1); // Ensure only one task was created
     }
     
@@ -178,7 +182,7 @@ class TaskControllerTest extends TestCase
     
         // Adjust to check if attachments is a MediaCollection
         $response->assertViewHas('attachments', function ($attachments) {
-            return $attachments instanceof \Spatie\MediaLibrary\MediaCollections\Models\Collections\MediaCollection;
+            return $attachments instanceof MediaCollection;
         });
     
         $response->assertViewHas('boardId', $this->board->id);
@@ -335,7 +339,7 @@ class TaskControllerTest extends TestCase
         $response->assertStatus(404);
     }
 
-    public function test_update_task_success()
+    public function test_update_task_success_without_progress()
     {
         // Simulate authentication
         $this->actingAs($this->user);
@@ -346,9 +350,9 @@ class TaskControllerTest extends TestCase
             'name' => 'Old Task Name',
             'description' => 'Old description.',
             'progress' => 'to_do',
-            'due' => '2024-10-07', 
-            'priority' => 'low', 
-            'tag' => 'initial_tag', 
+            'due' => '2024-10-07',
+            'priority' => 'low',
+            'tag' => 'initial_tag',
         ]);
     
         // Prepare updated task data including all required fields
@@ -356,9 +360,10 @@ class TaskControllerTest extends TestCase
             'name' => 'Updated Task Name',
             'description' => 'Updated description.',
             'due' => '2024-10-14',
-            'priority' => 'high', 
-            'progress' => 'low', 
+            'priority' => 'high',
+            'progress' => 'to_do',
             'tag' => 'updated_tag',
+            'idempotency_key' => 'unique-key',
         ];
     
         // Call the update method
@@ -373,9 +378,9 @@ class TaskControllerTest extends TestCase
             'description' => 'Updated description.',
             'due' => '2024-10-14 00:00:00',
             'priority' => 'high',
-            'progress' => 'low',
+            'progress' => 'to_do',
             'tag' => 'updated_tag',
-        ]);        
+        ]);
     }
 
     public function test_update_task_progress_success()
@@ -388,15 +393,16 @@ class TaskControllerTest extends TestCase
             'board_id' => $this->board->id,
             'name' => 'Old Task Name',
             'description' => 'Old description.',
-            'progress' => 'to_do', 
+            'progress' => 'to_do',
             'due' => '2024-10-07',
-            'priority' => 'low', 
+            'priority' => 'low',
             'tag' => 'initial_tag',
         ]);
     
-        // Prepare updated progress value
+        // Prepare updated progress value including the idempotency key
         $data = [
             'progress' => 'in_progress',
+            'idempotency_key' => 'unique-key',
         ];
     
         // Call the update method
@@ -438,11 +444,12 @@ class TaskControllerTest extends TestCase
         // Simulate authentication
         $this->actingAs($this->user);
         
-        // Prepare updated task data
+        // Prepare updated task data, including the idempotency key
         $data = [
             'name' => 'Updated Task Name',
             'description' => 'Updated description.',
-            'progress' => 'to_do', 
+            'progress' => 'to_do',
+            'idempotency_key' => 'unique-key',
         ];
         
         // Attempt to update a non-existent task
@@ -452,10 +459,9 @@ class TaskControllerTest extends TestCase
         $response->assertRedirect(route('boards.index'));
         
         // Assert that the session has the error message
-        $response->assertSessionHasErrors('task');
+        $response->assertSessionHasErrors(['task' => 'Task not found.']);
     }
-    
-    
+
     public function test_upload_file_success()
     {
         // Simulate authentication
@@ -467,8 +473,11 @@ class TaskControllerTest extends TestCase
         // Create a fake file
         $file = UploadedFile::fake()->create('document.pdf', 100); // 100 KB file
     
-        // Prepare the data
-        $data = ['attachment' => $file];
+        // Prepare the data, including the idempotency key
+        $data = [
+            'attachment' => $file,
+            'idempotency_key' => 'unique-key',
+        ];
     
         // Call the uploadFile method
         $response = $this->post(route('tasks.uploadFile', ['task' => $task->id]), $data);
@@ -476,6 +485,9 @@ class TaskControllerTest extends TestCase
         // Assert the response
         $response->assertRedirect(route('boards.tasks.show', ['boardId' => $this->board->id, 'taskId' => $task->id]));
         $response->assertSessionHas('success', 'Attachment uploaded successfully.');
+    
+        // Reload the task to check for the uploaded media
+        $task->refresh(); // Refresh the task to get the latest state
     
         // Assert the media has been added to the task
         $this->assertCount(1, $task->getMedia('attachments')); // Ensure one media is attached
@@ -499,6 +511,173 @@ class TaskControllerTest extends TestCase
         // Assert that the response has validation errors
         $response->assertRedirect();
         $response->assertSessionHasErrors(['attachment']);
+    }
+
+    public function test_destroy_task_successfully()
+    {
+        // Create a task associated with the board for this test
+        $task = Task::factory()->create(['board_id' => $this->board->id]);
+
+        // Simulate authenticating the board owner
+        $this->actingAs($this->user);
+
+        // Act: Send a delete request to destroy the task
+        $response = $this->withoutMiddleware()->delete(route('boards.tasks.destroy', ['boardId' => $this->board->id, 'taskId' => $task->id]), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+
+        // Assert: Redirected to the board's show page with a success message
+        $response->assertRedirect(route('boards.show', $this->board->id));
+        $response->assertSessionHas('success', 'Task deleted successfully.');
+
+        // Assert: The task is deleted from the database
+        $this->assertDatabaseMissing('tasks', ['id' => $task->id]);
+    }
+
+    public function test_destroy_task_fails_without_idempotency_key()
+    {
+        // Create a task associated with the board for this test
+        $task = Task::factory()->create(['board_id' => $this->board->id]);
+
+        // Simulate authenticating the board owner
+        $this->actingAs($this->user);
+
+        // Act: Send a delete request without an idempotency key
+        $response = $this->withoutMiddleware()->delete(route('boards.tasks.destroy', ['boardId' => $this->board->id, 'taskId' => $task->id]));
+
+        // Assert: Redirected to the boards.index with an error message
+        $response->assertRedirect(route('boards.index'));
+        $response->assertSessionHasErrors(['idempotency_key' => 'Idempotency key is required.']);
+    }
+
+    public function test_destroy_task_not_found()
+    {
+        // Simulate authenticating the board owner
+        $this->actingAs($this->user);
+
+        // Act: Attempt to delete a task that doesn't exist
+        $response = $this->delete(route('boards.tasks.destroy', ['boardId' => $this->board->id, 'taskId' => 999]), [
+            'idempotency_key' => 'unique_key_123'
+        ]);
+
+        // Assert: Ensure the response is a 404 status
+        $response->assertStatus(404);
+    }
+
+    public function test_update_task_status_unauthorized()
+    {
+        // Create a task associated with the board for this test
+        $task = Task::factory()->create(['board_id' => $this->board->id]);
+        
+        $this->actingAs($this->nonCollaborator);
+
+        // Prepare the request data
+        $data = [
+            'progress' => 'in_progress',
+        ];
+    
+        // Act: Attempt to update the task status
+        $response = $this->patch(route('tasks.updateStatus', ['taskId' => $task->id]), $data);
+    
+        // Assert: Unauthorized action
+        $response->assertStatus(403);
+    
+        // Additionally, verify that the task's progress has not changed
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'progress' => $task->progress, // Check if the progress remains the same
+        ]);
+    }
+
+    public function test_update_task_status_not_found()
+    {
+        // Simulate authenticating the board owner
+        $this->actingAs($this->user);
+
+        // Prepare the request data
+        $data = [
+            'progress' => 'in_progress',
+        ];
+
+        // Act: Attempt to update a non-existent task
+        $response = $this->patch(route('tasks.updateStatus', ['taskId' => 999]), $data);
+
+        // Assert: Task not found
+        $response->assertStatus(404);
+        $response->assertJson(['message' => 'Task not found.']);
+    }
+
+    public function test_destroy_file_success()
+    {
+        // Simulate authentication
+        $this->actingAs($this->user);
+    
+        // Create a task associated with the board
+        $task = Task::factory()->create(['board_id' => $this->board->id]);
+    
+        // Create and attach a fake file to the task
+        $attachment = $task->addMedia(UploadedFile::fake()->create('document.pdf', 100))->toMediaCollection('attachments');
+    
+        // Prepare the data, including the idempotency key
+        $data = [
+            'idempotency_key' => 'unique-key',
+        ];
+    
+        // Call the destroyFile method
+        $response = $this->delete(route('tasks.destroyFile', ['task' => $task->id, 'attachment' => $attachment->id]), $data);
+    
+        // Assert the response
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Attachment deleted successfully.');
+    
+        // Assert the attachment has been removed from the task
+        $task->refresh(); // Refresh the task to get the latest state
+        $this->assertCount(0, $task->getMedia('attachments')); // Ensure no media is attached
+    }
+    
+    public function test_destroy_file_unauthorized()
+    {
+        // Create a task associated with the board for this test
+        $task = Task::factory()->create(['board_id' => $this->board->id]);
+    
+        // Create and attach a fake file to the task
+        $attachment = $task->addMedia(UploadedFile::fake()->create('document.pdf', 100))->toMediaCollection('attachments');
+    
+        // Simulate authenticating a different user (not the board owner or collaborator)
+        $otherUser = User::factory()->create();
+        $this->actingAs($otherUser);
+    
+        // Prepare the data, including the idempotency key
+        $data = [
+            'idempotency_key' => 'unique-key',
+        ];
+    
+        // Attempt to delete the attachment
+        $response = $this->delete(route('tasks.destroyFile', ['task' => $task->id, 'attachment' => $attachment->id]), $data);
+    
+        // Assert: Unauthorized action
+        $response->assertStatus(403);
+    }
+    
+    public function test_destroy_file_not_found()
+    {
+        // Simulate authentication
+        $this->actingAs($this->user);
+        
+        // Create a task associated with the board
+        $task = Task::factory()->create(['board_id' => $this->board->id]);
+        
+        // Prepare the data, including the idempotency key
+        $data = [
+            'idempotency_key' => 'unique-key',
+        ];
+    
+        // Attempt to delete a non-existent attachment
+        $response = $this->delete(route('tasks.destroyFile', ['task' => $task->id, 'attachment' => 999]), $data); // Non-existent attachment ID
+        
+        // Assert: Redirect response for not found attachment
+        $response->assertRedirect(route('boards.tasks.show', ['boardId' => $this->board->id, 'taskId' => $task->id]));
+        $response->assertSessionHasErrors(['attachment' => 'Attachment not found.']);
     }
 
 }
