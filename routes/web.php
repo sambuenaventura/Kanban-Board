@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardUserController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\ProfileController;
@@ -72,6 +73,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
+    Route::get('/checkout/{plan?}', CheckoutController::class)->name('checkout');
 });
 
 Route::middleware(['auth'])->group(function () {
