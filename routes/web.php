@@ -7,6 +7,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
 use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\Mail;
@@ -74,6 +75,9 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
     Route::get('/checkout/{plan?}', CheckoutController::class)->name('checkout');
+    Route::post('/subscription/change', [SubscriptionController::class, 'change'])->name('subscription.change');
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+   
 });
 
 Route::middleware(['auth'])->group(function () {
