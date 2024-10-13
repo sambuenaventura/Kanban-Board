@@ -3,6 +3,7 @@
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardUserController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PricingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\TaskController;
@@ -67,6 +68,10 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::patch('/tasks/{taskId}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
     Route::post('/tasks/{task}/files', [TaskController::class, 'uploadFile'])->name('tasks.uploadFile');
     Route::delete('/tasks/{task}/{attachment}/files', [TaskController::class, 'destroyFile'])->name('tasks.destroyFile');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
 });
 
 Route::middleware(['auth'])->group(function () {
