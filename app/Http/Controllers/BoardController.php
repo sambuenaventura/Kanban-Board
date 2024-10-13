@@ -60,13 +60,25 @@ class BoardController extends Controller
 
     public function store(StoreBoardRequest $request)
     {
-        // Create a new board with the validated data
-        $board = $this->boardService->createBoard($request->validated());
+        $user = Auth::user();
+        
+        // Check if the user has a premium subscription
+        if ($user->subscribed('prod_R15v1tLN1697qM')) {
+            // Premium user, allow unlimited boards
+            $board = $this->boardService->createBoard($request->validated());
+        } else {
+            // Free user, limit to 3 boards
+            $boardCount = $user->boards()->count();
+            
+            if ($boardCount >= 3) {
+                return redirect()->route('boards.index')->withErrors('Free users can only create up to 3 boards. Upgrade to premium for unlimited boards.');
+            }
     
-        // Dispatch boardcreated event
+            $board = $this->boardService->createBoard($request->validated());
+        }
+    
         broadcast(new BoardCreated($board));
             
-        // Redirect to boards index or other relevant route
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
 
