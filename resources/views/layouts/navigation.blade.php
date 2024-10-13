@@ -14,8 +14,6 @@
                         {{ __('Boards') }}
                     </x-nav-link>
                 </div>
-                
-                
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('boards.manageInvitations')" :active="request()->routeIs('boards.manageInvitations')" class="relative flex items-center">
@@ -24,6 +22,12 @@
                         <span id="invitation-count-badge" class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center {{ $invitationCount > 0 ? '' : 'hidden' }}">
                             {{ $invitationCount }}
                         </span>
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('pricing.index')" :active="request()->routeIs('pricing.index')">
+                        {{ __('Pricing') }}
                     </x-nav-link>
                 </div>
             </div>
