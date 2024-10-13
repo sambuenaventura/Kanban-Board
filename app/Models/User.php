@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Cashier\Billable;
+use Laravel\Cashier\Subscription;
 
 class User extends Authenticatable
 {
@@ -67,5 +68,43 @@ class User extends Authenticatable
             ->count();
     }
     
+    public function subscription($name = 'default')
+    {
+        return $this->subscriptions()->where('stripe_status', 'active')->first();
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+    public function hasPremiumAccess()
+    {
+        $subscription = $this->subscription('prod_R15v1tLN1697qM');
+        return $this->hasLifetimeAccess() || ($subscription && $subscription->active());
+    }
+    
+    public function hasMonthlyAccess()
+    {
+        $subscription = $this->subscription('price_1Q93jFAtSEuPnXfebazUYa6U');
+        return $subscription && $subscription->active();
+    }
+
+    public function hasYearlyAccess()
+    {
+        $subscription = $this->subscription('price_1Q93jFAtSEuPnXfe12HX00Xl');
+        return $subscription && $subscription->active();
+    }
+
+
+    public function hasLifetimeAccess()
+    {
+        return $this->has_lifetime_access;
+    }
+
+    public function grantLifetimeAccess()
+    {
+        $this->has_lifetime_access = true;
+        $this->save();
+    }
 
 }
