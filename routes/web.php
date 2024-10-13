@@ -78,6 +78,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/subscription/change', [SubscriptionController::class, 'change'])->name('subscription.change');
     Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
    
+    Route::get('/subscription/handle-lifetime', [SubscriptionController::class, 'handleLifetime'])
+        ->name('subscription.handle-lifetime');
+    
+    Route::get('/subscription/handle-success/{plan}', [SubscriptionController::class, 'handleSuccess'])
+        ->name('subscription.handle-success');
 });
 
 Route::middleware(['auth'])->group(function () {
