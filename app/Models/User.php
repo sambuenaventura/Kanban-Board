@@ -68,7 +68,7 @@ class User extends Authenticatable
             ->count();
     }
     
-    public function subscription($name = 'default')
+    public function getActiveSubscription()
     {
         return $this->subscriptions()->where('stripe_status', 'active')->first();
     }
