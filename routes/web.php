@@ -79,6 +79,12 @@ Route::middleware(['auth'])->group(function () {
     // Select a billing period for a specific plan
     Route::get('/pricing/{plan}/billing', [PricingController::class, 'selectBillingPeriod'])->name('pricing.billing');
     
+    // Checkout (stripe)
+    Route::post('/checkout/{plan?}', CheckoutController::class)->name('checkout');
+    Route::post('/checkout/process', [CheckoutController::class, 'processCheckout'])->name('checkout.process');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+
     Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 });
 
