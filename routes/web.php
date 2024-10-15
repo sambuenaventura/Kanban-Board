@@ -73,24 +73,19 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
-    Route::get('/checkout/{plan?}', CheckoutController::class)->name('checkout');
-    Route::post('/subscription/change', [SubscriptionController::class, 'change'])->name('subscription.change');
-    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
-   
-    Route::get('/subscription/handle-lifetime', [SubscriptionController::class, 'handleLifetime'])
-        ->name('subscription.handle-lifetime');
+    // Show all available pricing plans
+    Route::get('/pricing', [PricingController::class, 'showPricing'])->name('pricing.index');
+
+    // Select a billing period for a specific plan
+    Route::get('/pricing/{plan}/billing', [PricingController::class, 'selectBillingPeriod'])->name('pricing.billing');
     
-    Route::get('/subscription/handle-success/{plan}', [SubscriptionController::class, 'handleSuccess'])
-        ->name('subscription.handle-success');
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('send-email',[TaskController::class, "sendEmail"]);
-    Route::get('/testroute', [NotificationController::class, 'sendEmail']);
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
 });
 
 
-Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
+Route::get('send-email',[TaskController::class, "sendEmail"]);
+Route::get('/testroute', [NotificationController::class, 'sendEmail']);
+
+// Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 require __DIR__.'/auth.php';
