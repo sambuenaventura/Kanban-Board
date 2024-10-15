@@ -2,38 +2,59 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PlanService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\Request;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 
 class CheckoutController extends Controller
 {
-    public function __invoke(Request $request, string $plan = 'price_1Q93jFAtSEuPnXfe12HX00Xl')
+    private $planService;
+    private $subscriptionService;
+
+    public function __construct(PlanService $planService, SubscriptionService $subscriptionService)
+    {
+        $this->planService = $planService;
+        $this->subscriptionService = $subscriptionService;
+    }
+
+    public function __invoke(Request $request, string $plan)
     {
         $user = $request->user();
-        // If the user already has lifetime access, redirect them
-        if ($user->hasLifetimeAccess()) {
-            return redirect()->route('pricing.index')->with('info', 'You already have lifetime access.');
+        $subscription = $this->subscriptionService->getUserSubscription($user);
+
+        if ($subscription && $subscription->active()) {
+            return redirect()->route('subscription.index')->withErrors(['subscription' => 'You already have an active subscription.']);
         }
-        // Handle lifetime plan separately
-        if ($plan === 'price_1Q93kUAtSEuPnXfeIJNqhbqM') {
-            return $user->checkoutCharge(280000, 'Lifetime Access', 1, [
-                'success_url' => route('subscription.handle-lifetime'),
-                'cancel_url' => route('pricing.index'),
+
+        $priceId = $this->planService->getPriceId($plan, $request->input('billing_period'));
+
+        if (!$priceId) {
+            abort(400, 'Invalid price ID');
+        }
+
+        $subscriptionName = $plan === 'premium' ? 'premium_subscription' : 'premium_plus_subscription';
+        $billingPeriod = $request->input('billing_period') === 'yearly' ? 'yearly' : 'monthly';
+
+        $subscriptionName = "{$subscriptionName}_{$billingPeriod}";
+
+        return $user->newSubscription($subscriptionName, $priceId)
+            ->checkout([
+                'success_url' => route('checkout.success', ['plan' => $plan]),
+                'cancel_url' => route('checkout.cancel'),
             ]);
-        }
-        // For other plans, proceed with subscription checkout
-        try {
-            return $user
-                ->newSubscription('prod_R15v1tLN1697qM', $plan)
-                ->checkout([
-                    'success_url' => route('subscription.handle-success', ['plan' => $plan]),
-                    'cancel_url' => route('pricing.index'),
-                ]);
-        } catch (IncompletePayment $exception) {
-            return redirect()->route(
-                'cashier.payment',
-                [$exception->payment->id, 'redirect' => route('pricing.index')]
-            );
-        }
+    }
+
+    public function success(Request $request)
+    {
+        $plan = $request->query('plan');
+        $planName = ($plan === 'premium') ? 'Premium' : (($plan === 'premium-plus') ? 'Premium+' : 'Unknown');
+
+        return redirect()->route('subscription.index')->with('success', "Your {$planName} subscription has been successfully activated!");
+    }
+
+    public function cancel()
+    {
+        return redirect()->route('pricing.index')->with('info', 'You have canceled the payment process. If you change your mind, feel free to complete your subscription at any time.');
     }
 }
