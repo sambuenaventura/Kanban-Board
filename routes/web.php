@@ -85,7 +85,25 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
 
+    // Subscription management page
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
+    // Cancel subscription
     Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    // Resume subscription (if it was canceled)
+    Route::post('/subscription/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
+
+    // Update payment method
+    Route::get('/subscription/payment-method', [SubscriptionController::class, 'editPaymentMethod'])->name('subscription.payment-method.edit');   
+    Route::post('/subscription/payment-method/add', [SubscriptionController::class, 'addPaymentMethod'])->name('subscription.payment-method.add');
+    Route::post('/subscription/payment-method/{paymentMethod}/set-default', [SubscriptionController::class, 'setDefaultPaymentMethod'])->name('subscription.payment-method.set-default');
+
+    // Change plan
+    Route::get('/subscription/change-plan', [SubscriptionController::class, 'showChangePlan'])->name('subscription.change-plan.show');
+    Route::get('/subscription/change-plan/{plan}/billing', [SubscriptionController::class, 'selectBillingPeriod'])->name('subscription.change-plan.billing');
+    Route::post('/subscription/change-plan/{plan}', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');
+
+    // Invoice history
+    Route::get('/subscription/invoices', [SubscriptionController::class, 'invoices'])->name('subscription.invoices');
 });
 
 
