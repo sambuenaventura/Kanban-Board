@@ -13,6 +13,7 @@ use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
 use App\Services\BoardService;
+use App\Services\SubscriptionService;
 use App\Services\TaskService;
 use App\Traits\IdempotentRequest;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -27,11 +28,13 @@ class TaskController extends Controller
 
     protected $taskService;
     protected $boardService;
+    protected $subscriptionService;
 
-    public function __construct(TaskService $taskService, BoardService $boardService)
+    public function __construct(TaskService $taskService, BoardService $boardService, SubscriptionService $subscriptionService)
     {
         $this->taskService = $taskService;
         $this->boardService = $boardService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     public function create($boardId)
