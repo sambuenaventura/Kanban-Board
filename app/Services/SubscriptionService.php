@@ -101,4 +101,18 @@ class SubscriptionService
 
         return $planNames[$priceId] ?? 'Unknown Plan';
     }
+
+    public function getMaxBoards($user)
+    {
+        // Define board limits for each subscription plan
+        switch (true) {
+            case $user->hasPremiumPlusAccess():
+                return PHP_INT_MAX; // Unlimited for Premium
+            case $user->hasPremiumAccess():
+                return PHP_INT_MAX; // Unlimited for Premium+
+            default:
+                return 2; // Basic plan limit
+        }
+    }
+
 }
