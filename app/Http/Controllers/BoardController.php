@@ -11,6 +11,7 @@ use App\Models\BoardUser;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\BoardService;
+use App\Services\SubscriptionService;
 use App\Services\TaskService;
 use App\Traits\IdempotentRequest;
 use Carbon\Carbon;
@@ -24,11 +25,13 @@ class BoardController extends Controller
 
     protected $boardService;
     protected $taskService;
+    protected $subscriptionService;
 
-    public function __construct(BoardService $boardService, TaskService $taskService)
+    public function __construct(BoardService $boardService, TaskService $taskService, SubscriptionService $subscriptionService)
     {
         $this->boardService = $boardService;
         $this->taskService = $taskService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     public function index()
@@ -60,13 +63,21 @@ class BoardController extends Controller
 
     public function store(StoreBoardRequest $request)
     {
-        // Create a new board with the validated data
+        $user = auth()->user();
+        
+        $maxBoards = $this->subscriptionService->getMaxBoards($user);
+    
+        $currentBoardCount = $user->boards()->count();
+    
+        if ($currentBoardCount >= $maxBoards) {
+            return redirect()->route('boards.index')
+                            ->withErrors(['error' => 'You have reached the maximum number of boards allowed for your subscription plan.']);
+        }
+    
         $board = $this->boardService->createBoard($request->validated());
     
-        // Dispatch boardcreated event
         broadcast(new BoardCreated($board));
-            
-        // Redirect to boards index or other relevant route
+
         return redirect()->route('boards.index')->with('success', 'Board created successfully.');
     }
 

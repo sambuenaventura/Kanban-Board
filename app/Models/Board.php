@@ -45,6 +45,11 @@ class Board extends Model
         return $this->hasMany(BoardUser::class)->with('user');
     }
 
+    public function invitations()
+    {
+        return $this->hasMany(BoardInvitation::class);
+    }
+
     public static function getDues($tasks)
     {
         $today = (new DateTime())->format('Y-m-d');

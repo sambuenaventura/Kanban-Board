@@ -14,16 +14,20 @@
                         {{ __('Boards') }}
                     </x-nav-link>
                 </div>
-                
-                
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('boards.manageInvitations')" :active="request()->routeIs('boards.manageInvitations')" class="relative flex items-center">
-                        {{ __('Board Invitations') }}
+                        {{ __('Invitations') }}
                         @php $invitationCount = auth()->user()->invitationCount(); @endphp
                         <span id="invitation-count-badge" class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center {{ $invitationCount > 0 ? '' : 'hidden' }}">
                             {{ $invitationCount }}
                         </span>
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('pricing.index')" :active="request()->routeIs('pricing.*')">
+                        {{ __('Pricing') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -46,6 +50,10 @@
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <x-dropdown-link :href="route('subscription.index')">
+                            {{ __('My Subscription') }}
                         </x-dropdown-link>
 
                         <!-- Authentication -->
@@ -79,6 +87,17 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('boards.index')" :active="request()->routeIs('boards.*') && !request()->routeIs('boards.manageInvitations')">
+                {{ __('Boards') }}
+            </x-responsive-nav-link>
+        </div>
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('boards.manageInvitations')" :active="request()->routeIs('boards.manageInvitations')">
+                {{ __('Invitations') }}
             </x-responsive-nav-link>
         </div>
 

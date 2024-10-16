@@ -13,6 +13,7 @@ use App\Models\Board;
 use App\Models\BoardUser;
 use App\Models\Task;
 use App\Services\BoardService;
+use App\Services\SubscriptionService;
 use App\Services\TaskService;
 use App\Traits\IdempotentRequest;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -27,11 +28,13 @@ class TaskController extends Controller
 
     protected $taskService;
     protected $boardService;
+    protected $subscriptionService;
 
-    public function __construct(TaskService $taskService, BoardService $boardService)
+    public function __construct(TaskService $taskService, BoardService $boardService, SubscriptionService $subscriptionService)
     {
         $this->taskService = $taskService;
         $this->boardService = $boardService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     public function create($boardId)
@@ -48,6 +51,17 @@ class TaskController extends Controller
         } 
         catch (ModelNotFoundException $e) {
             return redirect()->route('boards.index')->withErrors(['board_user' => 'Board not found.']);
+        }
+
+        $user = auth()->user();
+
+        $maxTasks = $this->subscriptionService->getMaxTasks($user);
+
+        $currentTaskCount = $board->tasks()->count();
+
+        if ($currentTaskCount >= $maxTasks) {
+            return redirect()->route('boards.show', $board->id)
+                            ->withErrors(['error' => 'You have reached the maximum number of tasks allowed for your subscription plan.']);
         }
         
         // Call the service and get the response

@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardUserController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PricingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SocialAuthController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TaskController;
 use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\Mail;
@@ -70,11 +73,43 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('send-email',[TaskController::class, "sendEmail"]);
-    Route::get('/testroute', [NotificationController::class, 'sendEmail']);
+    // Show all available pricing plans
+    Route::get('/pricing', [PricingController::class, 'showPricing'])->name('pricing.index');
+
+    // Select a billing period for a specific plan
+    Route::get('/pricing/{plan}/billing', [PricingController::class, 'selectBillingPeriod'])->name('pricing.billing');
+    
+    // Checkout (stripe)
+    Route::post('/checkout/{plan?}', CheckoutController::class)->name('checkout');
+    Route::post('/checkout/process', [CheckoutController::class, 'processCheckout'])->name('checkout.process');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::get('/checkout/cancel', [CheckoutController::class, 'cancel'])->name('checkout.cancel');
+
+    // Subscription management page
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
+    // Cancel subscription
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    // Resume subscription (if it was canceled)
+    Route::post('/subscription/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
+
+    // Update payment method
+    Route::get('/subscription/payment-method', [SubscriptionController::class, 'editPaymentMethod'])->name('subscription.payment-method.edit');   
+    Route::post('/subscription/payment-method/add', [SubscriptionController::class, 'addPaymentMethod'])->name('subscription.payment-method.add');
+    Route::post('/subscription/payment-method/{paymentMethod}/set-default', [SubscriptionController::class, 'setDefaultPaymentMethod'])->name('subscription.payment-method.set-default');
+
+    // Change plan
+    Route::get('/subscription/change-plan', [SubscriptionController::class, 'showChangePlan'])->name('subscription.change-plan.show');
+    Route::get('/subscription/change-plan/{plan}/billing', [SubscriptionController::class, 'selectBillingPeriod'])->name('subscription.change-plan.billing');
+    Route::post('/subscription/change-plan/{plan}', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');
+
+    // Invoice history
+    Route::get('/subscription/invoices', [SubscriptionController::class, 'invoices'])->name('subscription.invoices');
 });
 
 
-Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
+Route::get('send-email',[TaskController::class, "sendEmail"]);
+Route::get('/testroute', [NotificationController::class, 'sendEmail']);
+
+// Route::get('/auth/callback', [SocialAuthController::class, 'handleProviderCallback']);
 
 require __DIR__.'/auth.php';
