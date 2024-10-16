@@ -250,16 +250,19 @@ class TaskService
             'boardId' => $boardId,
         ];
     }
-
+    
     public function updateTaskStatus($id, $progress)
     {
         $task = $this->taskModel->findOrFail($id);
-    
+        
         $task->progress = $progress;
         $task->save();
-    
+        
+        // Invalidate board-specific task cache if necessary
+        Cache::forget("board_{$task->board_id}_tasks"); 
+        
         broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
-    
+        
         return [
             'success' => true,
             'message' => 'Task status updated',
