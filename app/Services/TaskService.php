@@ -221,6 +221,10 @@ class TaskService
             {
                 $task = $this->taskModel->findOrFail($id);
                 $task->delete();
+
+                // Invalidate board-specific task cache
+                Cache::forget("board_{$task->board_id}_tasks");
+
                 return [
                     'status' => 'success',
                     'message' => 'Task deleted successfully.',
