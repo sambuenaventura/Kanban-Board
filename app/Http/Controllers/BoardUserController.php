@@ -60,6 +60,8 @@ class BoardUserController extends Controller
     
     public function inviteUserToBoard(InviteUserRequest $request, Board $board)
     {
+        $user = auth()->user();
+    
         // Get the idempotency key from the request
         $idempotencyKey = $request->input('idempotency_key');
     
@@ -69,6 +71,26 @@ class BoardUserController extends Controller
                              ->withErrors(['idempotency_key' => 'Idempotency key is required.']);
         }
     
+        $maxCollaborators = $this->subscriptionService->getMaxCollaborators($user);
+    
+        $currentCollaboratorCount = $board->collaborators()->count();
+    
+        $pendingCollaboratorCount = $board->invitations()->where('status', 'pending')->count();
+    
+        $totalCollaborators = $currentCollaboratorCount + $pendingCollaboratorCount;
+    
+        // Check if the user is already a collaborator
+        if ($board->collaborators()->where('user_id', $request->user_id)->exists()) {
+            return redirect()->route('boards.show', $board->id)
+                             ->withErrors(['error' => 'User is already a collaborator on this board.']);
+        }
+    
+        if ($totalCollaborators >= $maxCollaborators) {
+            return redirect()->route('boards.show', $board->id)
+                             ->withErrors(['error' => 'You have reached the maximum number of collaborators allowed for this board.']);
+        }
+    
+        // Invite the user
         $response = $this->boardInvitationService->inviteUser($board, $request->user_id, $idempotencyKey);
     
         if (isset($response['status']) && $response['status'] === 'error') {
