@@ -11,6 +11,7 @@ use App\Models\BoardUser;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\BoardService;
+use App\Services\SubscriptionService;
 use App\Services\TaskService;
 use App\Traits\IdempotentRequest;
 use Carbon\Carbon;
@@ -24,11 +25,13 @@ class BoardController extends Controller
 
     protected $boardService;
     protected $taskService;
+    protected $subscriptionService;
 
-    public function __construct(BoardService $boardService, TaskService $taskService)
+    public function __construct(BoardService $boardService, TaskService $taskService, SubscriptionService $subscriptionService)
     {
         $this->boardService = $boardService;
         $this->taskService = $taskService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     public function index()
