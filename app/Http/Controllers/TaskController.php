@@ -52,6 +52,17 @@ class TaskController extends Controller
         catch (ModelNotFoundException $e) {
             return redirect()->route('boards.index')->withErrors(['board_user' => 'Board not found.']);
         }
+
+        $user = auth()->user();
+
+        $maxTasks = $this->subscriptionService->getMaxTasks($user);
+
+        $currentTaskCount = $board->tasks()->count();
+
+        if ($currentTaskCount >= $maxTasks) {
+            return redirect()->route('boards.show', $board->id)
+                            ->withErrors(['error' => 'You have reached the maximum number of tasks allowed for your subscription plan.']);
+        }
         
         // Call the service and get the response
         $response = $this->taskService->createTask($board, $request->validated(), $request->idempotency_key);
