@@ -107,9 +107,9 @@ class SubscriptionService
         // Define board limits for each subscription plan
         switch (true) {
             case $user->hasPremiumPlusAccess():
-                return PHP_INT_MAX; // Unlimited for Premium
-            case $user->hasPremiumAccess():
                 return PHP_INT_MAX; // Unlimited for Premium+
+            case $user->hasPremiumAccess():
+                return PHP_INT_MAX; // Unlimited for Premium
             default:
                 return 2; // Basic plan limit
         }
@@ -120,9 +120,9 @@ class SubscriptionService
         // Define task limits in boards for each subscription plan
         switch (true) {
             case $user->hasPremiumPlusAccess():
-                return PHP_INT_MAX; // Unlimited for Premium
-            case $user->hasPremiumAccess():
                 return PHP_INT_MAX; // Unlimited for Premium+
+            case $user->hasPremiumAccess():
+                return PHP_INT_MAX; // Unlimited for Premium
             default:
                 return 2; // Basic plan limit
         }   
@@ -133,9 +133,9 @@ class SubscriptionService
         // Define collaborator limits in boards for each subscription plan
         switch (true) {
             case $user->hasPremiumPlusAccess():
-                return 5; // Unlimited for Premium
+                return 5; // 5 for Premium+
             case $user->hasPremiumAccess():
-                return 2; // Unlimited for Premium+
+                return 2; // 2 for Premium
             default:
                 return 0; // Basic plan limit
         }  
