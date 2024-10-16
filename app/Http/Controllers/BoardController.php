@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class BoardController extends Controller
 {
@@ -88,7 +89,13 @@ class BoardController extends Controller
 
         $this->authorize('view', $board);
     
-        $tasks = $this->taskService->getUserTasks($board);
+        // Cache key for the tasks
+        $tasksCacheKey = "board_{$id}_tasks";
+
+        // Fetch user tasks with caching (600 = 10 minutes)
+        $tasks = Cache::remember($tasksCacheKey, 600, function () use ($board) {
+            return $this->taskService->getUserTasks($board);
+        });
         
         // Get collaborators
         $collaborators = $this->boardService->getCollaborators($board);
