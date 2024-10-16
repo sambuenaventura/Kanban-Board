@@ -13,6 +13,7 @@ use App\Models\BoardInvitation;
 use App\Models\BoardUser;
 use App\Models\User;
 use App\Services\BoardInvitationService;
+use App\Services\SubscriptionService;
 use App\Traits\IdempotentRequest;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -24,10 +25,12 @@ class BoardUserController extends Controller
     use AuthorizesRequests, IdempotentRequest;
 
     protected $boardInvitationService;
+    protected $subscriptionService;
 
-    public function __construct(BoardInvitationService $boardInvitationService)
+    public function __construct(BoardInvitationService $boardInvitationService, SubscriptionService $subscriptionService)
     {
         $this->boardInvitationService = $boardInvitationService;
+        $this->subscriptionService = $subscriptionService;
     }
 
     public function removeUserFromBoard(Request $request, Board $board, User $user)
