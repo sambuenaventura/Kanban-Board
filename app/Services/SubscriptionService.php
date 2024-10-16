@@ -115,6 +115,19 @@ class SubscriptionService
         }
     }
 
+    public function getMaxTasks($user)
+    {
+        // Define task limits in boards for each subscription plan
+        switch (true) {
+            case $user->hasPremiumPlusAccess():
+                return PHP_INT_MAX; // Unlimited for Premium
+            case $user->hasPremiumAccess():
+                return PHP_INT_MAX; // Unlimited for Premium+
+            default:
+                return 2; // Basic plan limit
+        }   
+    }
+
     public function getMaxCollaborators($user)
     {
         // Define collaborator limits in boards for each subscription plan
