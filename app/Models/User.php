@@ -80,43 +80,44 @@ class User extends Authenticatable
     
     public function hasPremiumAccess()
     {
-        // Check if the user has an active Premium subscription (either monthly or yearly)
-        $monthlySubscription = $this->subscription('price_1Q9SGkAtSEuPnXfeOlmPDRa1');
-        $yearlySubscription = $this->subscription('price_1Q9SKtAtSEuPnXfe8UjEWMKy');
-    
-        return $this->hasLifetimeAccess() || 
-               ($monthlySubscription && $monthlySubscription->active()) || 
-               ($yearlySubscription && $yearlySubscription->active());
+        // Check if the user has an active premium subscription (Monthly or Yearly)
+        $activeSubscription = $this->getActiveSubscription();
+        return $activeSubscription && in_array($activeSubscription->stripe_price, [
+            'price_1Q9SGkAtSEuPnXfeOlmPDRa1', // Monthly
+            'price_1Q9SKtAtSEuPnXfe8UjEWMKy'  // Yearly
+        ]);
     }
     
     public function hasPremiumPlusAccess()
     {
-        // Check if the user has an active Premium+ subscription (either monthly or yearly)
-        $monthlySubscription = $this->subscription('price_1Q9SMFAtSEuPnXfeQmMdMgQg');
-        $yearlySubscription = $this->subscription('price_1Q9SMfAtSEuPnXfeN6yuqYqm');
-    
-        return $monthlySubscription && $monthlySubscription->active() || 
-               $yearlySubscription && $yearlySubscription->active();
+        // Check if the user has an active premium plus subscription (Monthly or Yearly)
+        $activeSubscription = $this->getActiveSubscription();
+        return $activeSubscription && in_array($activeSubscription->stripe_price, [
+            'price_1Q9SMFAtSEuPnXfeQmMdMgQg', // Monthly
+            'price_1Q9SMfAtSEuPnXfeN6yuqYqm'   // Yearly
+        ]);
     }
     
     public function hasMonthlyAccess()
     {
-        // Check if the user has an active Premium or Premium+ monthly subscription
-        $premiumMonthly = $this->subscription('price_1Q9SGkAtSEuPnXfeOlmPDRa1');
-        $premiumPlusMonthly = $this->subscription('price_1Q9SMFAtSEuPnXfeQmMdMgQg');
+        // Check if the user has an active monthly subscription (Premium or Premium+)
+        $activeSubscription = $this->getActiveSubscription();
     
-        return ($premiumMonthly && $premiumMonthly->active()) || 
-               ($premiumPlusMonthly && $premiumPlusMonthly->active());
+        return $activeSubscription && in_array($activeSubscription->stripe_price, [
+            'price_1Q9SGkAtSEuPnXfeOlmPDRa1', // Premium Monthly
+            'price_1Q9SMFAtSEuPnXfeQmMdMgQg', // Premium+ Monthly
+        ]);
     }
     
     public function hasYearlyAccess()
     {
-        // Check if the user has an active Premium or Premium+ yearly subscription
-        $premiumYearly = $this->subscription('price_1Q9SKtAtSEuPnXfe8UjEWMKy');
-        $premiumPlusYearly = $this->subscription('price_1Q9SMfAtSEuPnXfeN6yuqYqm');
+        // Check if the user has an active yearly subscription (Premium or Premium+)
+        $activeSubscription = $this->getActiveSubscription();
     
-        return ($premiumYearly && $premiumYearly->active()) || 
-               ($premiumPlusYearly && $premiumPlusYearly->active());
+        return $activeSubscription && in_array($activeSubscription->stripe_price, [
+            'price_1Q9SKtAtSEuPnXfe8UjEWMKy', // Premium Yearly
+            'price_1Q9SMfAtSEuPnXfeN6yuqYqm',  // Premium+ Yearly
+        ]);
     }
     
     public function hasLifetimeAccess()
