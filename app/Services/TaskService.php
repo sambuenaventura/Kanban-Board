@@ -173,7 +173,10 @@ class TaskService
             $progressChanged = $task->progress !== ($data['progress'] ?? null);
             
             $task->update($data);
-        
+
+            // Invalidate board-specific task cache
+            Cache::forget("board_{$task->board_id}_tasks");
+
             // Determine the message based on the progress change
             $message = 'Task updated successfully.';
             if ($progressChanged) {
