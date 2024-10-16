@@ -125,7 +125,10 @@ class TaskService
             'board_id' => $board->id,
             'board_user_id' => $boardUser->id,
         ]);
-    
+
+        // Invalidate board-specific task cache
+        Cache::forget("board_{$task->board_id}_tasks");
+
         broadcast(new BoardTaskCreated($task));
     
         return ['success' => 'Task created successfully.', 'task' => $task];
