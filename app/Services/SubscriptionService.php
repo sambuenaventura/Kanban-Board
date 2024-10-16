@@ -115,4 +115,17 @@ class SubscriptionService
         }
     }
 
+    public function getMaxCollaborators($user)
+    {
+        // Define collaborator limits in boards for each subscription plan
+        switch (true) {
+            case $user->hasPremiumPlusAccess():
+                return 5; // Unlimited for Premium
+            case $user->hasPremiumAccess():
+                return 2; // Unlimited for Premium+
+            default:
+                return 0; // Basic plan limit
+        }  
+    }
+
 }
