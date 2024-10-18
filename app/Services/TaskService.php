@@ -125,7 +125,10 @@ class TaskService
             'board_id' => $board->id,
             'board_user_id' => $boardUser->id,
         ]);
-    
+
+        // Invalidate board-specific task cache
+        Cache::forget("board_{$task->board_id}_tasks");
+
         broadcast(new BoardTaskCreated($task));
     
         return ['success' => 'Task created successfully.', 'task' => $task];
@@ -170,7 +173,10 @@ class TaskService
             $progressChanged = $task->progress !== ($data['progress'] ?? null);
             
             $task->update($data);
-        
+
+            // Invalidate board-specific task cache
+            Cache::forget("board_{$task->board_id}_tasks");
+
             // Determine the message based on the progress change
             $message = 'Task updated successfully.';
             if ($progressChanged) {
@@ -215,6 +221,10 @@ class TaskService
             {
                 $task = $this->taskModel->findOrFail($id);
                 $task->delete();
+
+                // Invalidate board-specific task cache
+                Cache::forget("board_{$task->board_id}_tasks");
+
                 return [
                     'status' => 'success',
                     'message' => 'Task deleted successfully.',
@@ -240,16 +250,19 @@ class TaskService
             'boardId' => $boardId,
         ];
     }
-
+    
     public function updateTaskStatus($id, $progress)
     {
         $task = $this->taskModel->findOrFail($id);
-    
+        
         $task->progress = $progress;
         $task->save();
-    
+        
+        // Invalidate board-specific task cache if necessary
+        Cache::forget("board_{$task->board_id}_tasks"); 
+        
         broadcast(new BoardTaskUpdated($task->id, $task->board_id, auth()->id()));
-    
+        
         return [
             'success' => true,
             'message' => 'Task status updated',
