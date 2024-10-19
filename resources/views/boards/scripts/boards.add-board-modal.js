@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Board Modal Elements
-    const boardModal = document.getElementById("boardModal");
+    const boardModal = document.getElementById("createBoardModal");
     const openBoardBtn = document.getElementById("openBoardModalBtn");
     const closeBoardBtn = document.getElementById("closeBoardModalBtn");
 

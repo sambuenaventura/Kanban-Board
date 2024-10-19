@@ -102,7 +102,7 @@ class BoardControllerTest extends TestCase
                          ->get(route('boards.index'));
     
         // Checking if the modal div is present
-        $response->assertSee('<div id="boardModal"', false);
+        $response->assertSee('<div id="createBoardModal"', false);
     
         $response->assertSee('<div id="deleteBoardModal"', false);
     
