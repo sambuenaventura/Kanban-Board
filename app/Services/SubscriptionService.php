@@ -124,7 +124,7 @@ class SubscriptionService
             case $user->hasPremiumAccess():
                 return PHP_INT_MAX; // Unlimited for Premium
             default:
-                return 2; // Basic plan limit
+                return 15; // Basic plan limit
         }   
     }
 
