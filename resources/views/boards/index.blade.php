@@ -1,11 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
+        <div class="flex items-center justify-between">
+            <h2 class="text-3xl font-bold text-gray-900 leading-tight">
+                {{ __('Boards') }}
+            </h2>
+            <div class="text-right">
                 <p id="datePlaceholder" class="text-gray-500"></p>
                 <h1 id="timePlaceholder" class="text-2xl font-bold text-gray-700"></h1>
             </div>
-
         </div>
     </x-slot>
     
@@ -15,7 +17,7 @@
             <div class="h-full bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 sm:p-8">
                     <div class="flex flex-col sm:flex-row justify-between items-center mb-8 pb-6 border-b border-gray-200">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">My Boards</h1>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Owned Boards</h1>
                         @if ($boardsOwned->total() > 0)
                         <button id="openBoardModalBtn" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 active:bg-indigo-700 focus:outline-none focus:border-indigo-700 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -145,7 +147,7 @@
             <div class="h-full bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 sm:p-8">
                     <div class="flex flex-col sm:flex-row justify-between items-center mb-8 pb-6 border-b border-gray-200">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Team Boards</h1>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">Shared Boards</h1>
                         <div class="flex items-center">
                             <span class="text-sm text-gray-600 mr-2">Boards you're collaborating on</span>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 total-boards-count">

@@ -1,11 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
+        <div class="flex items-center justify-between">
+            <h2 class="text-3xl font-bold text-gray-900 leading-tight">
+                {{ __('Manage Your Tasks') }}
+            </h2>
+            <div class="text-right">
                 <p id="datePlaceholder" class="text-gray-500"></p>
                 <h1 id="timePlaceholder" class="text-2xl font-bold text-gray-700"></h1>
             </div>
-
         </div>
     </x-slot>
 

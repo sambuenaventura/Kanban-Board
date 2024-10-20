@@ -1,11 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
+        <div class="flex items-center justify-between">
+            <h2 class="text-3xl font-bold text-gray-900 leading-tight">
+                {{ __('Board Invitations') }}
+            </h2>
+            <div class="text-right">
                 <p id="datePlaceholder" class="text-gray-500"></p>
                 <h1 id="timePlaceholder" class="text-2xl font-bold text-gray-700"></h1>
             </div>
-
         </div>
     </x-slot>
     
@@ -13,7 +15,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-6">Pending Invitations</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 flex flex-col sm:flex-row justify-between items-center pb-6 border-b border-gray-200">Pending Invitations</h1>
                     
                     <div id="invitation-container">
                         @forelse($pendingInvitations as $invitation)

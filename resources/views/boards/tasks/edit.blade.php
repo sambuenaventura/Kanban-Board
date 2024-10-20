@@ -1,8 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Task Details
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="text-3xl font-bold text-gray-900 leading-tight">
+                {{ __('Edit Task') }}
+            </h2>
+            <div class="text-right">
+                <p id="datePlaceholder" class="text-gray-500"></p>
+                <h1 id="timePlaceholder" class="text-2xl font-bold text-gray-700"></h1>
+            </div>
+        </div>
     </x-slot>
     
     {{-- Content --}}
@@ -10,7 +16,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6 sm:p-8">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b">Edit Task: {{ $task->name }}</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b">{{ $task->name }}</h1>
 
                     <form action="{{ route('boards.tasks.update', ['boardId' => $boardId, 'taskId' => $task->id]) }}" method="POST">
                         @csrf
