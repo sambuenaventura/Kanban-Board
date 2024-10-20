@@ -40,15 +40,16 @@ class BoardService
             ->withCount(['tasks', 'boardUsers'])
             ->withCount([
                 'tasks as overdue_tasks_count' => function ($query) {
-                    $query->where('due', '<', now())->where('progress', '!=', 'done');
+                    $query->where('due', '<=', now()->subDay())
+                                ->where('progress', '!=', 'done');
                 },
                 'tasks as due_today_tasks_count' => function ($query) {
                     $query->where('due', '=', now()->startOfDay())->where('progress', '!=', 'done');
                 },
                 'tasks as due_soon_tasks_count' => function ($query) {
                     $query->where('due', '>', now()->endOfDay())
-                        ->where('due', '<=', now()->addWeek())
-                        ->where('progress', '!=', 'done');
+                          ->where('due', '<=', now()->addWeek())
+                          ->where('progress', '!=', 'done');
                 },
             ]);
 
