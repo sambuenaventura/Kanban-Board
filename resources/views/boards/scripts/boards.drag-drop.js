@@ -121,20 +121,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const dueDate = new Date(dueDateText);
         const now = new Date();
 
-        if (dueDate < now) {
+        const oneDay = 24 * 60 * 60 * 1000;
+
+        // Overdue: due date is at least one day past
+        if (dueDate <= now - oneDay) {
             return {
                 status: "Overdue",
                 barColor: "bg-red-500",
                 textColor: "bg-red-50 text-red-700",
             };
-        } else if (dueDate.toDateString() === now.toDateString()) {
+        }
+        // Due Today: the due date matches today's date
+        else if (dueDate.toDateString() === now.toDateString()) {
             return {
                 status: "Due Today",
                 barColor: "bg-yellow-500",
                 textColor: "bg-yellow-50 text-yellow-700",
             };
-        } else if (dueDate > now && dueDate - now <= 2 * 24 * 60 * 60 * 1000) {
-            // Due within 2 days
+        }
+        // Due Soon: due date is more than today and within 7 days
+        else if (dueDate > now && dueDate - now <= 7 * oneDay) {
             return {
                 status: "Due Soon",
                 barColor: "bg-orange-500",
