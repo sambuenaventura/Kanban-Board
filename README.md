@@ -8,6 +8,7 @@ This repository contains the code for a Kanban Board application that I develope
 ## Technologies (Completed✅ and In Progress⚠️)
 - ✅ Laravel
 - ✅ MySQL
+- ✅ TailwindCSS
 - ✅ Socialite
 - ✅ Spatie Laravel-medialibrary
 - ✅ Laravel Echo/Reverb (for real-time updates)
